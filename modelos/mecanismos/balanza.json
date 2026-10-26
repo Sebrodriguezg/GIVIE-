@@ -1,0 +1,40 @@
+{
+  "id": "balanza",
+  "nombre": "Balanza de brazos iguales",
+  "nota": "Coordenadas en mm, eje Y hacia arriba, +Z hacia el frente. Rotaciones en grados, orden XYZ. Armado según la ilustración de la cartilla (pág. 1).",
+  "grupos": {
+    "brazo": { "pivote": [0, 170, 23.5], "eje": "z" }
+  },
+  "pesas": {
+    "altura": 165,
+    "z": 23.5,
+    "posiciones": [-70, -60, -50, -40, -30, -20, 20, 30, 40, 50, 60, 70],
+    "inicial": { "pesa-pesada": -30, "pesa-liviana": 60 }
+  },
+  "piezas": [
+    { "id": "viga-11", "pos": [0, 5, 20] },
+    { "id": "viga-11", "pos": [0, 5, -20] },
+    { "id": "viga-5", "pos": [-10, 15, 0], "rot": [0, 90, 0] },
+    { "id": "viga-5", "pos": [10, 15, 0], "rot": [0, 90, 0] },
+    { "id": "tornillo-20", "pos": [-10, 0, 20] },
+    { "id": "tornillo-20", "pos": [10, 0, 20] },
+    { "id": "tornillo-20", "pos": [-10, 0, -20] },
+    { "id": "tornillo-20", "pos": [10, 0, -20] },
+
+    { "id": "viga-11", "pos": [-10, 75, 0], "rot": [0, 0, 90] },
+    { "id": "viga-11", "pos": [10, 75, 0], "rot": [0, 0, 90] },
+
+    { "id": "viga-5", "pos": [0, 125, 10] },
+    { "id": "viga-5", "pos": [0, 125, -10] },
+    { "id": "tornillo-30", "pos": [-10, 125, -15], "rot": [90, 0, 0] },
+    { "id": "tornillo-30", "pos": [10, 125, -15], "rot": [90, 0, 0] },
+    { "id": "tuerca-mariposa", "pos": [-10, 125, -17.5], "rot": [90, 0, 0] },
+    { "id": "tuerca-mariposa", "pos": [10, 125, -17.5], "rot": [90, 0, 0] },
+
+    { "id": "pletina-7", "pos": [0, 140, 17], "rot": [0, 90, 90] },
+    { "id": "tornillo-10", "pos": [0, 120, 8], "rot": [90, 0, 0] },
+    { "id": "tornillo-20", "pos": [0, 170, 8.5], "rot": [90, 0, 0] },
+
+    { "id": "viga-15", "pos": [0, 170, 23.5], "grupo": "brazo" }
+  ]
+}

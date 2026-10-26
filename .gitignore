@@ -1,0 +1,7 @@
+# entorno local
+.venv/
+__pycache__/
+
+# material de trabajo (no se publica)
+recursos/drive/
+recursos/piezas/fotos/

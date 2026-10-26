@@ -1,0 +1,14 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//GIVIE//Lanzamiento cartilla//ES
+CALSCALE:GREGORIAN
+BEGIN:VEVENT
+UID:lanzamiento-cartilla-sistemas-mecanicos-20261107@epe.edu.co
+DTSTAMP:20261026T000000Z
+DTSTART:20261107T190000Z
+DTEND:20261107T220000Z
+SUMMARY:Lanzamiento de la cartilla Vivencia tecnológica: Sistemas mecánicos
+LOCATION:Corporación Escuela Pedagógica Experimental\, Bogotá
+DESCRIPTION:Bienvenida\, mesa de trabajo Experiencia ATA Robótica Escolar EPE y taller con los prototipos de sistemas mecánicos.
+END:VEVENT
+END:VCALENDAR

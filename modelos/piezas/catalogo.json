@@ -1,0 +1,218 @@
+[
+  {
+    "id": "viga-5",
+    "nombre": "Viga de 5",
+    "categoria": "vigas",
+    "color": "azul",
+    "archivo": "modelos/piezas/viga-5.glb",
+    "medidas_mm": [
+      50.0,
+      10.0,
+      10.0
+    ]
+  },
+  {
+    "id": "viga-9",
+    "nombre": "Viga de 9",
+    "categoria": "vigas",
+    "color": "gris",
+    "archivo": "modelos/piezas/viga-9.glb",
+    "medidas_mm": [
+      90.0,
+      10.0,
+      10.0
+    ]
+  },
+  {
+    "id": "viga-11",
+    "nombre": "Viga de 11",
+    "categoria": "vigas",
+    "color": "azul",
+    "archivo": "modelos/piezas/viga-11.glb",
+    "medidas_mm": [
+      110.0,
+      10.0,
+      10.0
+    ]
+  },
+  {
+    "id": "viga-15",
+    "nombre": "Viga de 15",
+    "categoria": "vigas",
+    "color": "gris",
+    "archivo": "modelos/piezas/viga-15.glb",
+    "medidas_mm": [
+      150.0,
+      10.0,
+      10.0
+    ]
+  },
+  {
+    "id": "pletina-7",
+    "nombre": "Pletina flexible",
+    "categoria": "pletinas",
+    "color": "negro",
+    "archivo": "modelos/piezas/pletina-7.glb",
+    "medidas_mm": [
+      70.5,
+      2.0,
+      10.5
+    ]
+  },
+  {
+    "id": "rueda-grande",
+    "nombre": "Rueda grande",
+    "categoria": "ruedas",
+    "color": "amarillo",
+    "archivo": "modelos/piezas/rueda-grande.glb",
+    "medidas_mm": [
+      98.0,
+      7.0,
+      98.0
+    ]
+  },
+  {
+    "id": "rueda-mediana",
+    "nombre": "Rueda mediana",
+    "categoria": "ruedas",
+    "color": "amarillo",
+    "archivo": "modelos/piezas/rueda-mediana.glb",
+    "medidas_mm": [
+      55.0,
+      7.0,
+      55.0
+    ]
+  },
+  {
+    "id": "rueda-pequena",
+    "nombre": "Rueda pequeña",
+    "categoria": "ruedas",
+    "color": "amarillo",
+    "archivo": "modelos/piezas/rueda-pequena.glb",
+    "medidas_mm": [
+      34.0,
+      7.0,
+      34.0
+    ]
+  },
+  {
+    "id": "maza-grande",
+    "nombre": "Disco-maza grande",
+    "categoria": "ruedas",
+    "color": "naranja",
+    "archivo": "modelos/piezas/maza-grande.glb",
+    "medidas_mm": [
+      95.0,
+      10.0,
+      95.0
+    ]
+  },
+  {
+    "id": "maza-mediana",
+    "nombre": "Disco-maza mediana",
+    "categoria": "ruedas",
+    "color": "naranja",
+    "archivo": "modelos/piezas/maza-mediana.glb",
+    "medidas_mm": [
+      52.0,
+      10.0,
+      52.0
+    ]
+  },
+  {
+    "id": "maza-pequena",
+    "nombre": "Disco-maza pequeña",
+    "categoria": "ruedas",
+    "color": "naranja",
+    "archivo": "modelos/piezas/maza-pequena.glb",
+    "medidas_mm": [
+      31.0,
+      10.0,
+      31.0
+    ]
+  },
+  {
+    "id": "tornillo-10",
+    "nombre": "Tornillo 10 mm",
+    "categoria": "tornilleria",
+    "color": "metal",
+    "archivo": "modelos/piezas/tornillo-10.glb",
+    "medidas_mm": [
+      7.2,
+      12.6,
+      7.2
+    ]
+  },
+  {
+    "id": "tornillo-20",
+    "nombre": "Tornillo 20 mm",
+    "categoria": "tornilleria",
+    "color": "metal",
+    "archivo": "modelos/piezas/tornillo-20.glb",
+    "medidas_mm": [
+      7.2,
+      22.6,
+      7.2
+    ]
+  },
+  {
+    "id": "tornillo-30",
+    "nombre": "Tornillo 30 mm",
+    "categoria": "tornilleria",
+    "color": "metal",
+    "archivo": "modelos/piezas/tornillo-30.glb",
+    "medidas_mm": [
+      7.2,
+      32.6,
+      7.2
+    ]
+  },
+  {
+    "id": "tuerca",
+    "nombre": "Tuerca",
+    "categoria": "tornilleria",
+    "color": "metal",
+    "archivo": "modelos/piezas/tuerca.glb",
+    "medidas_mm": [
+      8.0,
+      3.2,
+      6.9
+    ]
+  },
+  {
+    "id": "tuerca-mariposa",
+    "nombre": "Tuerca de mariposa",
+    "categoria": "tornilleria",
+    "color": "metal",
+    "archivo": "modelos/piezas/tuerca-mariposa.glb",
+    "medidas_mm": [
+      23.0,
+      9.0,
+      7.2
+    ]
+  },
+  {
+    "id": "pesa-liviana",
+    "nombre": "Objeto liviano",
+    "categoria": "accesorios",
+    "color": "celeste",
+    "archivo": "modelos/piezas/pesa-liviana.glb",
+    "medidas_mm": [
+      13.0,
+      45.6,
+      13.0
+    ]
+  },
+  {
+    "id": "pesa-pesada",
+    "nombre": "Objeto pesado",
+    "categoria": "accesorios",
+    "color": "rojo",
+    "archivo": "modelos/piezas/pesa-pesada.glb",
+    "medidas_mm": [
+      16.0,
+      48.6,
+      16.0
+    ]
+  }
+]

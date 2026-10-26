@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vivencia tecnológica · Sistemas mecánicos</title>
+<meta name="description" content="Lanzamiento de la cartilla Vivencia tecnológica: Sistemas mecánicos, de la Corporación Escuela Pedagógica Experimental y ATA EPE Robótica Escolar.">
+<meta property="og:title" content="Lanzamiento · Vivencia tecnológica: Sistemas mecánicos">
+<meta property="og:description" content="7 de noviembre de 2026 · 2:00 p.m. · Corporación Escuela Pedagógica Experimental">
+<meta property="og:image" content="img/cartilla/pag-01.webp">
+<link rel="icon" href="img/logo-ata-epe.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Nunito:wght@400;700;900&family=Patrick+Hand&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/estilos.css">
+<script type="importmap">
+{ "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<canvas id="fondo" aria-hidden="true"></canvas>
+<div id="etiqueta-pieza" class="etiqueta-pieza" hidden></div>
+
+<header class="barra" id="barra">
+  <a href="#inicio" class="barra-logo"><img src="img/logo-ata-epe.png" alt="" width="40" height="40"><span>ATA EPE</span></a>
+  <nav>
+    <a href="#cartilla">La cartilla</a>
+    <a href="#evento">Lanzamiento</a>
+    <a href="#vistazo">Vistazo</a>
+    <a href="#mas">Más</a>
+  </nav>
+</header>
+
+<main>
+  <!-- 1. Portada -->
+  <section id="inicio" class="portada">
+    <img class="portada-logo" src="img/logo-ata-epe.png" alt="ATA EPE · Actividad, emoción y razonamiento se unen para crear" width="500" height="500">
+    <p class="portada-kicker">Lanzamiento oficial de la cartilla</p>
+    <h1 class="portada-titulo"><span>Vivencia tecnológica</span>Sistemas mecánicos</h1>
+    <div class="pregunta" id="pregunta">
+      <p class="pregunta-etiqueta">Pregunta para hoy</p>
+      <p class="pregunta-texto" id="pregunta-texto">¿Qué es el equilibrio para ti?</p>
+      <button type="button" class="pregunta-otra" id="pregunta-otra">Otra pregunta ↻</button>
+    </div>
+    <a href="#cartilla" class="desliza">Desliza<span aria-hidden="true">↓</span></a>
+  </section>
+
+  <!-- 2. La cartilla -->
+  <section id="cartilla" class="bloque revelar">
+    <div class="bloque-texto">
+      <h2 class="titulo">La cartilla</h2>
+      <p class="destacado">La cartilla <em>Sistemas mecánicos</em> es una invitación para dar rienda suelta a nuestra curiosidad, imaginación y deseo de saber; a explorar, preguntarnos, diseñar, inventar, relacionar, explicar y experimentar.</p>
+      <p>Un mundo de posibilidades para aprender, distinguir variables, comparar y medir, identificar parámetros, diseñar, deconstruir, crear y recrear prototipos que enriquecen nuestro saber y nos hacen protagonistas de nuestras propias invenciones.</p>
+      <ul class="acciones" aria-label="Lo que se hace con la cartilla">
+        <li>Preguntar</li><li>Diseñar</li><li>Investigar</li><li>Innovar</li><li>Explicar</li><li>Explorar</li><li>Experimentar</li><li>Recrear</li>
+      </ul>
+      <p class="lema">Pensar para diseñar,<br>diseñar para pensar.</p>
+      <dl class="ficha-libro">
+        <div><dt>Siete prototipos</dt><dd>Balanza, pantógrafo, mono acróbata, pescador, dos ruedas, cuenta historias y bailarinas</dd></div>
+        <div><dt>Autores</dt><dd>Rosa Inés Pedreros Martínez, Laura Tatiana Cobos Valbuena, Edwin Alejandro Castelblanco Gracia, Sergio Andrés Sabogal Rincón y Andrés Mayorga Jiménez</dd></div>
+        <div><dt>Edita</dt><dd>Corporación Escuela Pedagógica Experimental · Bogotá, 2026</dd></div>
+        <div><dt>ISBN</dt><dd>978-958-57808-6-6</dd></div>
+      </dl>
+    </div>
+    <figure class="bloque-figura portada-libro">
+      <img src="img/cartilla/pag-01.webp" alt="Portada de la cartilla Vivencia tecnológica: Sistemas mecánicos" loading="lazy" width="1600" height="900">
+    </figure>
+  </section>
+
+  <!-- 3. El evento -->
+  <section id="evento" class="bloque evento revelar">
+    <h2 class="titulo">Te invitamos al lanzamiento</h2>
+    <div class="cuenta" id="cuenta" aria-live="polite">
+      <div><b id="cuenta-dias">--</b><span>días</span></div>
+      <div><b id="cuenta-horas">--</b><span>horas</span></div>
+      <div><b id="cuenta-min">--</b><span>min</span></div>
+      <div><b id="cuenta-seg">--</b><span>seg</span></div>
+    </div>
+    <p class="cuenta-mensaje" id="cuenta-mensaje" hidden></p>
+    <div class="evento-datos">
+      <div><span>Fecha</span><b>Sábado 7 de noviembre de 2026</b></div>
+      <div><span>Hora</span><b>2:00 p.m. – 5:00 p.m.</b></div>
+      <div><span>Lugar</span><b>Corporación Escuela Pedagógica Experimental</b></div>
+    </div>
+    <ol class="programa">
+      <li><time>2:00</time><b>Bienvenida</b><span>Proyección</span></li>
+      <li><time>2:15</time><b>Palabras de apertura</b><span>Laura Tatiana Cobos, maestra de ceremonia</span></li>
+      <li><time>2:30</time><b>Mesa de trabajo</b><span>Experiencia ATA Robótica Escolar EPE</span></li>
+      <li><time>3:30</time><b>Receso</b><span>Compartir</span></li>
+      <li><time>4:00</time><b>Taller</b><span>Vivencia con los prototipos de sistemas mecánicos</span></li>
+      <li><time>5:00</time><b>Cierre</b></li>
+    </ol>
+    <div class="botones">
+      <a class="boton" href="evento.ics" download="lanzamiento-cartilla.ics">Agregar a mi calendario</a>
+      <a class="boton boton-claro" href="https://www.google.com/maps/search/?api=1&query=Escuela+Pedag%C3%B3gica+Experimental+Bogot%C3%A1" target="_blank" rel="noopener">Cómo llegar</a>
+    </div>
+  </section>
+
+  <!-- 4. Vistazo a la cartilla -->
+  <section id="vistazo" class="vistazo revelar">
+    <h2 class="titulo">Un vistazo a la cartilla</h2>
+    <p class="vistazo-intro">Siete prototipos para explorar. Elige uno.</p>
+    <div class="mecanismos" role="tablist" id="mecanismos"></div>
+    <article class="mecanismo" id="mecanismo" aria-live="polite"></article>
+  </section>
+
+  <!-- 5. Más -->
+  <section id="mas" class="mas revelar">
+    <h2 class="titulo">Sigue explorando</h2>
+    <div class="puertas">
+      <a class="puerta puerta-givie" href="secciones/givie.html"><b>GIVIE</b><span>El grupo y sus miembros</span></a>
+      <a class="puerta puerta-historia" href="secciones/historia.html"><b>Historia</b><span>La EPE y ATA EPE Robótica Escolar</span></a>
+      <a class="puerta puerta-experiencias" href="secciones/experiencias.html"><b>Experiencias</b><span>Talleres y eventos anteriores</span></a>
+      <a class="puerta puerta-kits" href="secciones/kits.html"><b>Kits</b><span>Próximamente</span></a>
+    </div>
+  </section>
+</main>
+
+<footer class="pie">
+  <img src="img/logo-ata-epe.png" alt="" width="64" height="64">
+  <p><b>Vivencia tecnológica: Sistemas mecánicos</b> · ISBN 978-958-57808-6-6</p>
+  <p>Corporación Escuela Pedagógica Experimental · ATA EPE Robótica Escolar · GIVIE</p>
+  <p class="pie-nota">Hecho en Colombia.</p>
+</footer>
+
+<script type="module" src="js/principal.js"></script>
+<script type="module" src="js/fondo.js"></script>
+</body>
+</html>
