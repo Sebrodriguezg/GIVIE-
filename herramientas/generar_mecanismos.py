@@ -1,18 +1,21 @@
-"""Arma los mecanismos y exporta un GLB animado de cada uno para ver en 3D y en AR.
+"""Arma los mecanismos y exporta cada uno animado en GLB (web, Android) y USDZ (iPhone).
 
 Uso:  .venv/bin/python herramientas/generar_mecanismos.py [id ...]
 - La balanza se arma desde modelos/mecanismos/balanza.json (lo usa también la web interactiva).
 - Los demás vienen de herramientas/mecanismos.py, con su movimiento calculado.
+El USDZ hace falta porque el que model-viewer genera solo para Quick Look no lleva animación.
 """
 import json
 import math
 import sys
+import tempfile
 from pathlib import Path
 
 import numpy as np
 import pygltflib
 import trimesh
-from trimesh.transformations import euler_matrix, quaternion_from_matrix, translation_matrix
+from pxr import Gf, Sdf, Usd, UsdGeom, UsdShade, UsdUtils, Vt
+from trimesh.transformations import quaternion_from_matrix
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from generar_piezas import PIEZAS, a_trimesh  # noqa: E402
@@ -118,63 +121,113 @@ def exportar(mec):
         anim.canal(nombre, "translation", np.array([m[:3, 3] for m in mats]))
         anim.canal(nombre, "rotation", cuaterniones(mats))
     anim.guardar()
+    exportar_usdz(mec, t, poses)
     return escena, ruta
+
+
+# ---------------------------------------------------------------- USDZ para Quick Look (iPhone)
+def _material(stage, color_lineal, metal, rugosidad, cache):
+    clave = (tuple(color_lineal), metal, rugosidad)
+    if clave not in cache:
+        ruta = f"/raiz/materiales/m{len(cache)}"
+        mat = UsdShade.Material.Define(stage, ruta)
+        sombreador = UsdShade.Shader.Define(stage, ruta + "/superficie")
+        sombreador.CreateIdAttr("UsdPreviewSurface")
+        sombreador.CreateInput("diffuseColor", Sdf.ValueTypeNames.Color3f).Set(Gf.Vec3f(*color_lineal))
+        sombreador.CreateInput("metallic", Sdf.ValueTypeNames.Float).Set(metal)
+        sombreador.CreateInput("roughness", Sdf.ValueTypeNames.Float).Set(rugosidad)
+        mat.CreateSurfaceOutput().ConnectToSource(sombreador.ConnectableAPI(), "surface")
+        cache[clave] = mat
+    return cache[clave]
+
+
+def _matriz_usd(m):
+    return Gf.Matrix4d(np.asarray(m, dtype=float).T.tolist())   # USD usa vectores fila
+
+
+def exportar_usdz(mec, tiempos, poses):
+    ruta = CARPETA / f"{mec['id']}.usdz"
+    with tempfile.TemporaryDirectory() as tmp:
+        usdc = str(Path(tmp) / f"{mec['id']}.usdc")
+        stage = Usd.Stage.CreateNew(usdc)
+        UsdGeom.SetStageUpAxis(stage, UsdGeom.Tokens.y)
+        UsdGeom.SetStageMetersPerUnit(stage, 1.0)
+        stage.SetTimeCodesPerSecond(CUADROS_POR_SEGUNDO)
+        stage.SetFramesPerSecond(CUADROS_POR_SEGUNDO)
+        stage.SetStartTimeCode(0)
+        stage.SetEndTimeCode(len(tiempos) - 1)
+        raiz = UsdGeom.Xform.Define(stage, "/raiz")
+        stage.SetDefaultPrim(raiz.GetPrim())
+        materiales, geometrias = {}, {}
+        for c, (nombre, partes) in enumerate(mec["cuerpos"].items()):
+            cuerpo = UsdGeom.Xform.Define(stage, f"/raiz/c{c}")
+            op = cuerpo.AddTransformOp()
+            if nombre in poses[0]:
+                for k, pose in enumerate(poses):
+                    op.Set(_matriz_usd(a_metros(pose[nombre])), k)
+            else:
+                op.Set(_matriz_usd(np.eye(4)))
+            for i, (pieza, local) in enumerate(partes):
+                geom = malla(pieza) if isinstance(pieza, str) else _mallas[f"{mec['id']}-{pieza.nombre}"]
+                if id(geom) not in geometrias:
+                    suave = geom.smooth_shaded
+                    geometrias[id(geom)] = (suave.vertices, suave.faces, suave.vertex_normals)
+                vertices, caras, normales = geometrias[id(geom)]
+                malla_usd = UsdGeom.Mesh.Define(stage, f"/raiz/c{c}/p{i}")
+                malla_usd.AddTransformOp().Set(_matriz_usd(a_metros(local)))
+                malla_usd.CreatePointsAttr(Vt.Vec3fArray.FromNumpy(np.asarray(vertices, dtype=np.float32)))
+                malla_usd.CreateFaceVertexCountsAttr(Vt.IntArray([3] * len(caras)))
+                malla_usd.CreateFaceVertexIndicesAttr(Vt.IntArray(np.asarray(caras).ravel().tolist()))
+                malla_usd.CreateNormalsAttr(Vt.Vec3fArray.FromNumpy(np.asarray(normales, dtype=np.float32)))
+                malla_usd.SetNormalsInterpolation(UsdGeom.Tokens.vertex)
+                malla_usd.CreateSubdivisionSchemeAttr(UsdGeom.Tokens.none)
+                pbr = geom.visual.material
+                color = np.asarray(pbr.baseColorFactor[:3], dtype=float) / 255
+                UsdShade.MaterialBindingAPI.Apply(malla_usd.GetPrim()).Bind(
+                    _material(stage, color, float(pbr.metallicFactor or 0), float(pbr.roughnessFactor or 0.5), materiales))
+        stage.GetRootLayer().Save()
+        UsdUtils.CreateNewUsdzPackage(Sdf.AssetPath(usdc), str(ruta))
+    return ruta
 
 
 # ---------------------------------------------------------------- balanza (JSON)
-def armar_balanza(definicion):
-    escena = trimesh.Scene()
-    grupos = definicion.get("grupos", {})
-    for nombre, g in grupos.items():
-        escena.graph.update(frame_from=escena.graph.base_frame, frame_to=nombre,
-                            matrix=translation_matrix(np.asarray(g["pivote"]) * MM))
-    for i, p in enumerate(definicion["piezas"]):
-        m = euler_matrix(*np.radians(p.get("rot") or [0, 0, 0]), "rxyz")
-        m[:3, 3] = np.asarray(p["pos"]) * MM
-        padre = p.get("grupo")
-        if padre:
-            m[:3, 3] -= np.asarray(grupos[padre]["pivote"]) * MM
-        escena.add_geometry(malla(p["id"]), node_name=f"{p['id']}_{i}", geom_name=p["id"],
-                            parent_node_name=padre, transform=m)
-    pesas = definicion["pesas"]
-    piv = np.asarray(grupos["brazo"]["pivote"])
-    colgantes = []
-    for pid, x in pesas["inicial"].items():
-        local = np.array([x, pesas["altura"], pesas["z"]]) - piv
-        escena.add_geometry(malla(pid), node_name=f"{pid}_colgante", geom_name=pid,
-                            parent_node_name="brazo", transform=translation_matrix(local * MM))
-        colgantes.append(f"{pid}_colgante")
-    return escena, colgantes
-
-
-def exportar_balanza():
+def balanza():
+    """La balanza del JSON como cuerpos: estructura fija, brazo y dos pesas que cuelgan verticales."""
     definicion = json.loads((CARPETA / "balanza.json").read_text())
-    escena, colgantes = armar_balanza(definicion)
-    ruta = CARPETA / "balanza.glb"
-    escena.export(ruta)
-    # vaivén amortiguado: la balanza oscila y se queda en equilibrio
-    duracion = 6.0
-    t = np.linspace(0, duracion, 121)
-    ang = np.radians(14.0) * np.exp(-t / 1.4) * np.cos(2 * math.pi * t / 1.7)
-    rot = np.stack([np.zeros_like(ang), np.zeros_like(ang), np.sin(ang / 2), np.cos(ang / 2)], axis=1)
-    anim = Animador(ruta)
-    anim.tiempos(t)
-    anim.canal("brazo", "rotation", rot)
-    for nodo in colgantes:
-        anim.canal(nodo, "rotation", rot * np.array([-1, -1, -1, 1]))
-    anim.guardar()
-    return escena, ruta
+    piv = np.asarray(definicion["grupos"]["brazo"]["pivote"], dtype=float)
+    cuerpos = {"fijo": [], "brazo": []}
+    for p in definicion["piezas"]:
+        if p.get("grupo") == "brazo":
+            cuerpos["brazo"].append((p["id"], mecanismos.M(np.asarray(p["pos"]) - piv, p.get("rot") or (0, 0, 0))))
+        else:
+            cuerpos["fijo"].append((p["id"], mecanismos.M(p["pos"], p.get("rot") or (0, 0, 0))))
+    pesas = definicion["pesas"]
+    colgantes = {pid: np.array([x, pesas["altura"], pesas["z"]]) - piv for pid, x in pesas["inicial"].items()}
+    for pid in colgantes:
+        cuerpos[pid] = [(pid, np.eye(4))]
+
+    def movimiento(t):
+        # vaivén amortiguado: la balanza oscila y se queda en equilibrio
+        a = math.radians(14.0) * math.exp(-t / 1.4) * math.cos(2 * math.pi * t / 1.7)
+        brazo = mecanismos.mover(piv) @ mecanismos.giro(mecanismos.Z, a)
+        poses = {"brazo": brazo}
+        for pid, local in colgantes.items():
+            poses[pid] = brazo @ mecanismos.mover(local) @ mecanismos.giro(mecanismos.Z, -a)
+        return poses
+    return dict(id="balanza", nombre=definicion["nombre"], duracion=6.0, cuerpos=cuerpos, movimiento=movimiento)
 
 
 def main():
     pedidos = set(sys.argv[1:])
-    trabajos = [("balanza", exportar_balanza)] + [(f().get("id"), (lambda f=f: exportar(f()))) for f in mecanismos.TODOS]
-    for mid, hacer in trabajos:
-        if pedidos and mid not in pedidos:
+    for fabricar in [balanza, *mecanismos.TODOS]:
+        mec = fabricar()
+        if pedidos and mec["id"] not in pedidos:
             continue
-        escena, ruta = hacer()
+        escena, ruta = exportar(mec)
         ext = (escena.bounds[1] - escena.bounds[0]) * 1000
-        print(f"{mid:18s} {ext[0]:4.0f} x {ext[1]:4.0f} x {ext[2]:4.0f} mm  {ruta.stat().st_size // 1024:5d} KB")
+        usdz = ruta.with_suffix(".usdz")
+        print(f"{mec['id']:18s} {ext[0]:4.0f} x {ext[1]:4.0f} x {ext[2]:4.0f} mm  "
+              f"glb {ruta.stat().st_size // 1024:5d} KB  usdz {usdz.stat().st_size // 1024:5d} KB")
 
 
 if __name__ == "__main__":

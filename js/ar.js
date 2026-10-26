@@ -24,7 +24,9 @@ export async function prepararVisor() {
 /** Etiqueta <model-viewer> para el mecanismo m (ver datos.js). */
 export function visorHtml(m, estilo = '') {
   const camara = m.camara ?? {};
-  return `<model-viewer src="${rutaBase()}modelos/mecanismos/${m.id}.glb" alt="${m.nombre} armado con el kit ATA EPE"
+  // ios-src: USDZ animado propio; el que model-viewer genera solo para Quick Look sale sin movimiento
+  const base = `${rutaBase()}modelos/mecanismos/${m.id}`;
+  return `<model-viewer src="${base}.glb" ios-src="${base}.usdz" alt="${m.nombre} armado con el kit ATA EPE"
     ar ar-modes="webxr scene-viewer quick-look" ar-scale="auto" camera-controls autoplay touch-action="pan-y"
     shadow-intensity="1" exposure="1.05" camera-orbit="${camara.orbita ?? '25deg 72deg auto'}"
     ${camara.objetivo ? `camera-target="${camara.objetivo}"` : ''} style="${estilo}"></model-viewer>`;

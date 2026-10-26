@@ -38,7 +38,7 @@ python3 -m http.server 8765
 Las medidas están en `herramientas/generar_piezas.py` (y explicadas en `recursos/piezas/medidas.md`).
 
 ```bash
-uv venv .venv && uv pip install --python .venv/bin/python trimesh manifold3d numpy pygltflib
+uv venv .venv && uv pip install --python .venv/bin/python trimesh manifold3d numpy scipy pygltflib usd-core
 .venv/bin/python herramientas/generar_piezas.py      # piezas
 .venv/bin/python herramientas/generar_mecanismos.py  # mecanismos armados (AR)
 ```
