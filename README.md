@@ -48,6 +48,31 @@ Los mecanismos están en `herramientas/mecanismos.py`: cada uno lista sus cuerpo
 cinemática. `generar_mecanismos.py` muestrea ese movimiento y lo guarda como animación en el GLB.
 En `js/datos.js`, `modelo3d: 'animado'` lo muestra en la página.
 
+### Videos y galería
+
+Todo se configura en `datos/config.json`, sin tocar código:
+
+```json
+{
+  "videos": {
+    "lista_reproduccion": "https://www.youtube.com/playlist?list=...",
+    "videos": [{ "url": "https://youtu.be/...", "titulo": "Balanza", "descripcion": "..." }]
+  },
+  "galeria": {
+    "carpeta": "https://drive.google.com/drive/folders/...",
+    "formulario": "https://forms.gle/..."
+  }
+}
+```
+
+- **Videos:** una lista de reproducción de YouTube se actualiza sola al agregarle videos en YouTube;
+  la lista `videos` sirve para escoger videos sueltos con su título.
+- **Galería:** la carpeta de Drive debe estar compartida como «cualquier persona con el enlace puede ver».
+  La Action `.github/workflows/galeria.yml` revisa la carpeta cada 3 horas, escribe `datos/galeria.json`
+  y vuelve a publicar la página. Para actualizar ya: pestaña **Actions → Actualizar galería → Run workflow**.
+  Mientras no exista `galeria.json`, la página muestra la carpeta de Drive incrustada.
+- `formulario` (opcional) muestra el botón «Sube tu diseño».
+
 ### Publicar
 
 La realidad aumentada exige HTTPS. GitHub Pages sirve: Settings → Pages → rama `main`, carpeta raíz.

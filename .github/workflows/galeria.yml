@@ -1,0 +1,33 @@
+name: Actualizar galería
+
+on:
+  schedule:
+    - cron: "17 */3 * * *"      # cada 3 horas
+  workflow_dispatch:            # botón "Run workflow" en la pestaña Actions
+  push:
+    paths: ["datos/config.json"]
+
+permissions:
+  contents: write
+  pages: write
+
+jobs:
+  actualizar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Listar imágenes de la carpeta de Drive
+        run: python3 herramientas/actualizar_galeria.py
+      - name: Guardar y publicar si hubo cambios
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ -n "$(git status --porcelain datos/galeria.json)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add datos/galeria.json
+            git commit -m "Actualizar galería desde Drive"
+            git push
+            # los commits hechos con el token de la Action no disparan Pages por sí solos
+            gh api --method POST "/repos/${{ github.repository }}/pages/builds" || true
+          fi
