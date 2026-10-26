@@ -71,7 +71,7 @@ Todo se configura en `datos/config.json`, sin tocar código:
 - **Videos:** una lista de reproducción de YouTube se actualiza sola al agregarle videos en YouTube;
   la lista `videos` sirve para escoger videos sueltos con su título.
 - **Galería:** la carpeta de Drive debe estar compartida como «cualquier persona con el enlace puede ver».
-  La Action `.github/workflows/galeria.yml` revisa la carpeta cada 3 horas, escribe `datos/galeria.json`
+  La Action `.github/workflows/galeria.yml` revisa la carpeta cada 30 minutos, escribe `datos/galeria.json`
   y vuelve a publicar la página. Para actualizar ya: pestaña **Actions → Actualizar galería → Run workflow**.
   Mientras no exista `galeria.json`, la página muestra la carpeta de Drive incrustada.
 - `hoja` (opcional): la hoja de respuestas del formulario. De ella solo se toman el nombre del
