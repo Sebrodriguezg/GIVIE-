@@ -1,0 +1,123 @@
+% Lista de pendientes de la web del lanzamiento de la cartilla.
+% Compilar:  latexmk -pdf pendientes.tex
+\documentclass[11pt,a4paper]{article}
+\usepackage[spanish,es-noshorthands]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[margin=2.2cm]{geometry}
+\usepackage[table]{xcolor}
+\usepackage{tabularx,array,booktabs}
+\usepackage{enumitem}
+\usepackage{fontawesome5}
+\usepackage[most]{tcolorbox}
+\usepackage[hidelinks]{hyperref}
+
+\definecolor{morado}{HTML}{2A1B7E}
+\definecolor{amarillo}{HTML}{FFCF2E}
+\definecolor{rojo}{HTML}{C4142C}
+\definecolor{verde}{HTML}{1F9D55}
+\definecolor{gris}{HTML}{5D5A73}
+
+\newcommand{\alta}{\textcolor{rojo}{\faCircle}~Alta}
+\newcommand{\media}{\textcolor{amarillo!80!black}{\faCircle}~Media}
+\newcommand{\baja}{\textcolor{verde}{\faCircle}~Baja}
+\newcommand{\casilla}{\faSquare[regular]}
+
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\renewcommand{\arraystretch}{1.35}
+
+% tabla de una sección: casilla | tarea | quién | prioridad
+\newenvironment{pendientes}
+  {\par\noindent\tabularx{\linewidth}{@{}c Y >{\raggedright\arraybackslash}p{2.6cm} p{1.7cm}@{}}
+   \toprule \textbf{} & \textbf{Tarea} & \textbf{Quién} & \textbf{Prioridad}\\ \midrule}
+  {\bottomrule\endtabularx\par\medskip}
+
+\newcommand{\seccion}[2]{\section*{\textcolor{morado}{#1~#2}}}
+
+\begin{document}
+
+\begin{tcolorbox}[colback=morado,colframe=morado,coltext=white,arc=4mm,boxsep=6pt]
+  {\Huge\bfseries\textcolor{amarillo}{Pendientes}}\\[4pt]
+  {\Large Web del lanzamiento · \emph{Vivencia tecnológica: Sistemas mecánicos}}\\[2pt]
+  GIVIE · ATA EPE Robótica Escolar · Corporación Escuela Pedagógica Experimental
+\end{tcolorbox}
+
+\noindent\begin{tabularx}{\linewidth}{@{}l Y@{}}
+\faGlobe~\textbf{Web} & \url{https://sebrodriguezg.github.io/GIVIE-/}\\
+\faGithub~\textbf{Repositorio} & \url{https://github.com/Sebrodriguezg/GIVIE-}\\
+\faCalendar*~\textbf{Lanzamiento} & Sábado 7 de noviembre de 2026, 2:00--5:00 p.\,m., Corporación Escuela Pedagógica Experimental\\
+\faClock~\textbf{Estado al} & 26 de octubre de 2026
+\end{tabularx}
+
+\begin{tcolorbox}[colback=verde!8,colframe=verde,title={\faCheck~Lo que ya funciona},fonttitle=\bfseries]
+\begin{itemize}[leftmargin=*,itemsep=1pt]
+  \item Portada con logo, pregunta al azar y fondo 3D de piezas que cambia en cada visita.
+  \item La cartilla, el evento (cuenta regresiva, programa, calendario) y el vistazo con las 40 páginas.
+  \item Siete mecanismos en 3D: la balanza interactiva y seis animados; todos en realidad aumentada
+        (GLB para Android, USDZ animado para iPhone).
+  \item Secciones: GIVIE, Historia, Experiencias, Videos, Galería y Kits.
+  \item Galería desde Drive con autor y nombre del modelo; se actualiza sola cada 3 horas.
+  \item Botón «Sube tu diseño» enlazado al formulario.
+\end{itemize}
+\end{tcolorbox}
+
+\seccion{\faUserShield}{Privacidad y seguridad}
+\begin{pendientes}
+\casilla & La hoja de respuestas es pública y muestra los \textbf{correos} de quienes suben diseños.
+Crear una pestaña solo con fecha, nombre, modelo y archivo; publicarla en la web como CSV; dejar la hoja
+completa como \emph{Restringida} y cambiar el enlace \texttt{hoja} en \texttt{datos/config.json}. & GIVIE & \alta\\
+\casilla & Moderación: hoy todo lo que se sube al formulario se publica sin revisión. Decidir si se usa
+una carpeta aparte solo con los diseños aprobados. & GIVIE & \alta\\
+\casilla & Autorización de las familias antes de publicar fotos o videos donde aparezcan niñas y niños
+(galería y experiencias). & GIVIE & \alta\\
+\casilla & El formulario exige iniciar sesión con Google (por la subida de archivos). Confirmar que no esté
+restringido a cuentas de la institución. & GIVIE & \media\\
+\end{pendientes}
+
+\seccion{\faCalendarCheck}{Antes del lanzamiento (7 de noviembre)}
+\begin{pendientes}
+\casilla & Confirmar la dirección exacta del lugar para el botón «Cómo llegar». & GIVIE & \alta\\
+\casilla & Probar la realidad aumentada en un iPhone y en un Android reales, con varios mecanismos. & GIVIE & \alta\\
+\casilla & Imprimir el código QR de la web para la proyección y el taller. & GIVIE & \alta\\
+\casilla & Reemplazar el video de prueba por los videos reales (idealmente una lista de reproducción de YouTube). & GIVIE / técnico & \media\\
+\casilla & Logo de ATA EPE en alta resolución (PNG transparente o SVG). & GIVIE & \media\\
+\end{pendientes}
+
+\seccion{\faFile*}{Contenido de las secciones}
+\begin{pendientes}
+\casilla & \textbf{GIVIE}: miembros, foto y una breve presentación de cada uno. & GIVIE & \media\\
+\casilla & \textbf{Experiencias}: escoger fotos y videos de talleres y eventos anteriores (con permisos). & GIVIE & \media\\
+\casilla & \textbf{Kits}: qué kits hay, qué traen, precio y cómo conseguirlos. & GIVIE & \media\\
+\casilla & \textbf{Historia}: revisar la línea de tiempo; agregar la fundación de la EPE y el nacimiento del kit ATA EPE. & GIVIE & \media\\
+\casilla & Revisar las pistas de observación de cada mecanismo con las autoras y autores de la cartilla. & GIVIE & \baja\\
+\casilla & Enlazar los códigos QR de la cartilla (publicaciones de \texttt{roboticaescolar.com}). & técnico & \baja\\
+\casilla & Después del evento: convertir la sección del lanzamiento en «Así fue», con fotos. & GIVIE / técnico & \baja\\
+\end{pendientes}
+
+\seccion{\faCubes}{Modelos 3D}
+\begin{pendientes}
+\casilla & Comparar los seis mecanismos animados con los prototipos reales (fotos de cada uno armado,
+de frente y de lado) y corregir el armado. & GIVIE / técnico & \media\\
+\casilla & Confirmar los colores reales de cada pieza (en la ilustración, la balanza es verde). & GIVIE & \baja\\
+\casilla & Medidas finas: diámetro de los agujeros, tornillos y tuercas reales. & GIVIE & \baja\\
+\casilla & Mejorar las figuras (mono, pescador, bailarinas, bote). & técnico & \baja\\
+\end{pendientes}
+
+\seccion{\faCogs}{Técnico}
+\begin{pendientes}
+\casilla & Anexar la web al dominio definitivo cuando haya acceso (es estática: basta copiar la carpeta). & técnico & \media\\
+\casilla & Decidir si se dejan públicas las páginas de revisión \texttt{piezas.html} y \texttt{mecanismos.html}. & GIVIE & \baja\\
+\casilla & Revisar el rendimiento en celulares de gama baja (fondo 3D y modelos). & técnico & \baja\\
+\end{pendientes}
+
+\begin{tcolorbox}[colback=amarillo!15,colframe=amarillo!80!black,title={\faInfoCircle~Cómo se actualiza la web},fonttitle=\bfseries]
+\begin{itemize}[leftmargin=*,itemsep=1pt]
+  \item \textbf{Videos y galería}: todo se configura en \texttt{datos/config.json}.
+  \item \textbf{Galería ya}: en GitHub, \emph{Actions → Actualizar galería → Run workflow}.
+  \item \textbf{Quitar un diseño}: sacarlo de la carpeta de Drive; desaparece en la siguiente revisión.
+  \item \textbf{Modelos 3D}: \texttt{herramientas/generar\_piezas.py} y \texttt{generar\_mecanismos.py} (ver el README).
+\end{itemize}
+\end{tcolorbox}
+
+\end{document}

@@ -5,3 +5,10 @@ __pycache__/
 # material de trabajo (no se publica)
 recursos/drive/
 recursos/piezas/fotos/
+
+# auxiliares de LaTeX
+pendientes/*.aux
+pendientes/*.log
+pendientes/*.fls
+pendientes/*.fdb_latexmk
+pendientes/*.out
