@@ -2,7 +2,9 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { armar, pieza, rutaBase, MM } from './piezas3d.js';
+import { armar, pieza, MM } from './piezas3d.js';
+import { verEnMesa } from './ar.js';
+import { MECANISMOS } from './datos.js';
 
 const PESAS = [
   { id: 'pesa-pesada', masa: 2, nombre: 'pesado' },
@@ -160,7 +162,7 @@ export async function montar(contenedor, { abrirVentana }) {
   };
   verCuentas.addEventListener('click', alternarCuentas);
   document.getElementById('lab-reiniciar').addEventListener('click', sortear);
-  document.getElementById('lab-ar').addEventListener('click', () => verEnMesa(abrirVentana));
+  document.getElementById('lab-ar').addEventListener('click', () => verEnMesa(MECANISMOS[0], abrirVentana));
 
   // ---------- tamaño y bucle
   function ajustar() {
@@ -194,49 +196,4 @@ export async function montar(contenedor, { abrirVentana }) {
     controles.dispose();
     renderer.dispose();
   };
-}
-
-// ---------- realidad aumentada con <model-viewer>
-let modelViewerListo;
-function cargarScript(src) {
-  return new Promise((ok, falla) => {
-    const s = Object.assign(document.createElement('script'), { src, onload: ok, onerror: falla });
-    if (src.includes('model-viewer')) s.type = 'module';
-    document.head.append(s);
-  });
-}
-
-async function verEnMesa(abrirVentana) {
-  modelViewerListo ??= cargarScript('https://cdn.jsdelivr.net/npm/@google/model-viewer@3.5.0/dist/model-viewer.min.js');
-  const caja = document.createElement('div');
-  caja.innerHTML = `
-    <h3 class="titulo" style="font-size:2rem;margin-bottom:8px">La balanza en tu mesa</h3>
-    <model-viewer src="${rutaBase()}modelos/mecanismos/balanza.glb" alt="Balanza de brazos iguales armada con el kit ATA EPE"
-      ar ar-modes="webxr scene-viewer quick-look" ar-scale="auto" camera-controls autoplay
-      shadow-intensity="1" exposure="1.05" camera-orbit="20deg 75deg auto"
-      style="width:min(84vw,620px);height:min(58vh,460px);background:radial-gradient(#fffaf0,#efe6cf);border-radius:16px">
-      <button slot="ar-button" class="boton boton-rojo" style="position:absolute;left:50%;bottom:14px;transform:translateX(-50%)">Ponerla en mi mesa</button>
-    </model-viewer>
-    <div id="ar-ayuda"></div>`;
-  abrirVentana(caja);
-  await modelViewerListo;
-  const visor = caja.querySelector('model-viewer');
-  await customElements.whenDefined('model-viewer');
-  const ayuda = caja.querySelector('#ar-ayuda');
-  const explicar = () => {
-    if (visor.canActivateAR) {
-      ayuda.innerHTML = '<p>Apunta la cámara a una mesa o al piso y toca la pantalla para ubicarla.</p>';
-      return;
-    }
-    const url = location.href.split('#')[0] + '#m-balanza';
-    ayuda.innerHTML = `<p style="font-family:var(--mano);font-size:1.3rem;margin:12px 0 0">Ábrela en tu celular para verla sobre tu mesa:</p><div class="qr" id="qr"></div>`;
-    cargarScript('https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js').then(() => {
-      const qr = window.qrcode(0, 'M');
-      qr.addData(url);
-      qr.make();
-      ayuda.querySelector('#qr').innerHTML = qr.createSvgTag({ cellSize: 5, margin: 2, scalable: false });
-    });
-  };
-  visor.addEventListener('load', explicar, { once: true });
-  if (visor.loaded) explicar();
 }

@@ -30,6 +30,14 @@ COLORES = {
     "metal": (190, 194, 200),
     "rojo": (200, 32, 46),
     "celeste": (56, 168, 222),
+    "blanco": (246, 244, 238),
+    "piel": (238, 198, 150),
+    "cafe": (125, 78, 42),
+    "rosado": (242, 150, 190),
+    "madera": (214, 170, 110),
+    "azul-oscuro": (38, 58, 140),
+    "naranja-pez": (250, 122, 30),
+    "agua": (120, 190, 230),
 }
 
 
@@ -147,6 +155,11 @@ def tuerca_mariposa():
 
 
 # ---------------------------------------------------------------- pesas (balanza)
+def varilla(largo):
+    """Eje / varilla roscada de 4 mm, centrada, a lo largo de Y."""
+    return cilindro(1.95, largo)
+
+
 def pesa(lado, cuerda=28.0):
     """Objeto colgante: el origen es el punto de donde cuelga (arriba)."""
     gancho = cilindro(2.6, 1.4, "z") - cilindro(1.6, 3, "z")
@@ -191,6 +204,8 @@ PIEZAS = [
     ("tornillo-30", "Tornillo 30 mm", "tornilleria", lambda: tornillo(30), "metal"),
     ("tuerca", "Tuerca", "tornilleria", tuerca, "metal"),
     ("tuerca-mariposa", "Tuerca de mariposa", "tornilleria", tuerca_mariposa, "metal"),
+    ("varilla-60", "Varilla de 60 mm", "tornilleria", lambda: varilla(60), "metal"),
+    ("varilla-100", "Varilla de 100 mm", "tornilleria", lambda: varilla(100), "metal"),
     ("pesa-liviana", "Objeto liviano", "accesorios", lambda: pesa(13), "celeste"),
     ("pesa-pesada", "Objeto pesado", "accesorios", lambda: pesa(16), "rojo"),
 ]

@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mecanismos ATA EPE</title>
+<script type="module" src="https://cdn.jsdelivr.net/npm/@google/model-viewer@3.5.0/dist/model-viewer.min.js"></script>
+<style>
+  :root { --fondo:#f7f5ef; --tinta:#1d1a3a; --morado:#2b1d7a; --amarillo:#ffd23f; }
+  body { margin:0; font-family: system-ui, sans-serif; background:var(--fondo); color:var(--tinta); }
+  header { background:var(--morado); color:#fff; padding:20px 16px; }
+  header h1 { margin:0; font-size:1.6rem; color:var(--amarillo); letter-spacing:.02em; }
+  main { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:16px; padding:16px; }
+  .ficha { background:#fff; border-radius:14px; overflow:hidden; box-shadow:0 2px 8px #0001; }
+  model-viewer { width:100%; height:320px; background:radial-gradient(#fff,#ece9df); }
+  .ficha p { margin:8px 12px 12px; font-size:.9rem; }
+  .ficha b { display:block; font-size:1rem; }
+</style>
+</head>
+<body>
+<header><h1>Mecanismos de la cartilla</h1>Arrastra para girar · en el celular, toca el cubo para verlos en tu mesa (AR)</header>
+<main id="lista"></main>
+<script type="module">
+  const cat = ['balanza','pantografo','manivela','biela','dos-ruedas','cuenta-historias','bailarinas']
+    .map(id => ({ nombre: id, archivo: `modelos/mecanismos/${id}.glb`, medidas_mm: [] }));
+  const lista = document.getElementById('lista');
+  for (const p of cat) {
+    const el = document.createElement('article');
+    el.className = 'ficha';
+    el.innerHTML = `<model-viewer src="${p.archivo}" alt="${p.nombre}" camera-controls autoplay
+        ar ar-modes="webxr scene-viewer quick-look" ar-scale="fixed" shadow-intensity="1"
+        camera-orbit="25deg 70deg auto" exposure="1.1"></model-viewer>
+      <p><b>${p.nombre}</b></p>`;
+    lista.append(el);
+  }
+</script>
+</body>
+</html>

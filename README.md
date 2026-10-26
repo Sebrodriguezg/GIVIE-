@@ -24,10 +24,12 @@ python3 -m http.server 8765
 | `index.html` | Portada, la cartilla, el evento, vistazo a la cartilla, menú final |
 | `secciones/` | Páginas internas: GIVIE, historia, experiencias, kits |
 | `js/fondo.js` | Piezas 3D del fondo (un conjunto distinto en cada visita) |
-| `js/balanza.js` | Balanza interactiva + botón de realidad aumentada |
+| `js/balanza.js` | Balanza interactiva |
+| `js/ar.js` | Modelos animados con model-viewer y realidad aumentada |
 | `js/datos.js` | Textos de los mecanismos y banco de preguntas |
 | `modelos/piezas/` | GLB de cada pieza del kit, a escala real |
-| `modelos/mecanismos/` | Armado de cada mecanismo (`.json`) y su GLB animado para AR |
+| `modelos/mecanismos/` | GLB animado de cada mecanismo (3D y AR); `balanza.json` arma la balanza interactiva |
+| `piezas.html`, `mecanismos.html` | Catálogos para revisar los modelos |
 | `img/cartilla/` | Las 40 páginas de la cartilla |
 | `herramientas/` | Scripts que generan los modelos 3D |
 
@@ -41,9 +43,10 @@ uv venv .venv && uv pip install --python .venv/bin/python trimesh manifold3d num
 .venv/bin/python herramientas/generar_mecanismos.py  # mecanismos armados (AR)
 ```
 
-Para agregar un mecanismo: crear `modelos/mecanismos/<id>.json` con sus piezas
-(posición en mm, rotación en grados), correr `generar_mecanismos.py` y marcarlo con
-`modelo3d: true` en `js/datos.js`.
+Los mecanismos están en `herramientas/mecanismos.py`: cada uno lista sus cuerpos rígidos
+(piezas del kit en mm y grados, más figuras propias) y una función `movimiento(t)` con la
+cinemática. `generar_mecanismos.py` muestrea ese movimiento y lo guarda como animación en el GLB.
+En `js/datos.js`, `modelo3d: 'animado'` lo muestra en la página.
 
 ### Publicar
 

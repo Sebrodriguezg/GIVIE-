@@ -1,4 +1,5 @@
 import { MECANISMOS, PREGUNTAS } from './datos.js';
+import { prepararVisor, verEnMesa, visorHtml } from './ar.js';
 
 const $ = sel => document.querySelector(sel);
 const EVENTO = new Date('2026-11-07T14:00:00-05:00');
@@ -98,7 +99,7 @@ for (const m of MECANISMOS) {
   b.type = 'button';
   b.role = 'tab';
   b.dataset.id = m.id;
-  b.innerHTML = `<span class="num">${m.num}</span> ${m.nombre}${m.modelo3d ? ' · 3D' : ''}`;
+  b.innerHTML = `<span class="num">${m.num}</span> ${m.nombre}`;
   b.addEventListener('click', () => mostrar(m.id));
   pestanas.append(b);
 }
@@ -115,7 +116,20 @@ async function mostrar(id, desplazar = false) {
   panel.innerHTML = `
     <div class="mecanismo-cabeza"><h3>${m.nombre}${m.modelo3d ? '' : '<span class="pronto">pronto en 3D</span>'}</h3><p>${m.apodo}</p></div>
     <p class="mecanismo-pregunta">${m.pregunta}</p>
-    ${m.modelo3d ? `
+    ${m.modelo3d === 'animado' ? `
+    <div class="lab">
+      <div class="lab-escena">${visorHtml(m, 'width:100%;height:100%;position:absolute;inset:0')}</div>
+      <div class="lab-panel">
+        <h4>Míralo moverse</h4>
+        <p>${m.pista}</p>
+        <p>Gira el modelo arrastrando el dedo o el mouse.</p>
+        <div class="lab-botones">
+          <button type="button" class="boton boton-rojo" id="lab-ar">Ver en mi mesa (AR)</button>
+          <button type="button" class="boton boton-claro" id="lab-pausa">Pausar</button>
+        </div>
+      </div>
+    </div>` : ''}
+    ${m.modelo3d === 'interactivo' ? `
     <div class="lab">
       <div class="lab-escena" id="lab-escena"><div class="lab-cargando">Armando la balanza…</div></div>
       <div class="lab-panel">
@@ -138,9 +152,16 @@ async function mostrar(id, desplazar = false) {
     abrirVentana(grande);
   }));
   if (desplazar) $('#vistazo').scrollIntoView({ behavior: 'smooth' });
-  if (m.modelo3d) {
+  if (m.modelo3d === 'interactivo') {
     const { montar } = await import(`./${m.id}.js`);
     desmontar = await montar($('#lab-escena'), { abrirVentana });
+  } else if (m.modelo3d === 'animado') {
+    const visor = panel.querySelector('model-viewer');
+    $('#lab-ar').addEventListener('click', () => verEnMesa(m, abrirVentana, visor));
+    $('#lab-pausa').addEventListener('click', e => {
+      if (visor.paused) { visor.play(); e.target.textContent = 'Pausar'; } else { visor.pause(); e.target.textContent = 'Seguir'; }
+    });
+    prepararVisor();
   }
 }
 

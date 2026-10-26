@@ -192,6 +192,30 @@
     ]
   },
   {
+    "id": "varilla-60",
+    "nombre": "Varilla de 60 mm",
+    "categoria": "tornilleria",
+    "color": "metal",
+    "archivo": "modelos/piezas/varilla-60.glb",
+    "medidas_mm": [
+      3.9,
+      60.0,
+      3.9
+    ]
+  },
+  {
+    "id": "varilla-100",
+    "nombre": "Varilla de 100 mm",
+    "categoria": "tornilleria",
+    "color": "metal",
+    "archivo": "modelos/piezas/varilla-100.glb",
+    "medidas_mm": [
+      3.9,
+      100.0,
+      3.9
+    ]
+  },
+  {
     "id": "pesa-liviana",
     "nombre": "Objeto liviano",
     "categoria": "accesorios",
