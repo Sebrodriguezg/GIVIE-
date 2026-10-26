@@ -47,7 +47,7 @@ async function poblar() {
   const cat = (await catalogo()).filter(p => p.categoria !== 'accesorios');
   const ids = conjunto.ids ?? cat.map(p => p.id);
   const paginas = document.documentElement.scrollHeight / innerHeight;
-  const total = Math.round(Math.min(celular ? 16 : 30, 4 + paginas * PARALAJE * (celular ? 3 : 5)));
+  const total = Math.round(Math.min(celular ? 24 : 46, 6 + paginas * PARALAJE * (celular ? 4.5 : 8)));
   const recorrido = (paginas - 1) * ALTO_VISTA * PARALAJE;
 
   const tareas = [];
