@@ -132,6 +132,12 @@ def lapiz(largo=58):
             Forma("lapiz-grafito", grafito, "negro")]
 
 
+def marca(r=2.5, vertical=True):
+    """Pastilla roja para seguir (y contar) las vueltas de una rueda. vertical: rueda con eje Z."""
+    m = Manifold.cylinder(1.2, r, r, 32, True)
+    return Forma(f"marca-{r}-{'v' if vertical else 'h'}", m if vertical else m.rotate([90, 0, 0]), "rojo")
+
+
 def figuras(lista, matriz):
     return [(f, matriz) for f in lista]
 
@@ -164,9 +170,9 @@ def dos_ruedas():
     fijo += [("tornillo-20", M((x, 0, z))) for x in (-65, 75) for z in (-20, 20)]
     fijo.append((Forma("correa-dos-ruedas", correa(G, RG, P, RP, 3, 1.3), "negro"), M((0, 0, 33.5))))
     grande = [("varilla-100", M((0, 0, 0), (90, 0, 0)))] + rueda_en_z("grande", 30) + \
-        [(p, mover((0, 0, -45)) @ m) for p, m in manivela(0, 35, -1)]
+        [(p, mover((0, 0, -45)) @ m) for p, m in manivela(0, 35, -1)] + [(marca(2.8), mover((0, 37, 37.6)))]
     pequena = [("varilla-60", M((0, 0, 15), (90, 0, 0))), ("rueda-pequena", M((0, 0, 30), (90, 0, 0))),
-               ("maza-pequena", M((0, 0, 35), (90, 0, 0)))]
+               ("maza-pequena", M((0, 0, 35), (90, 0, 0))), (marca(2.2), mover((12, 0, 37.6)))]
 
     def movimiento(t):
         a = TAU * t / 8
@@ -181,7 +187,7 @@ def _rueda_vertical():
     """Rueda vertical con llanta (radio efectivo 30) y manivela, en su propio eje Z."""
     return ([("varilla-60", M((0, 0, 10), (90, 0, 0)))] + rueda_en_z("mediana", 12, con_maza=False) +
             [(Forma("llanta-30", llanta(27.5, 2.5, 3), "negro"), M((0, 0, 14.5))),
-             ("maza-mediana", M((0, 0, 17), (90, 0, 0)))] +
+             ("maza-mediana", M((0, 0, 17), (90, 0, 0))), (marca(), mover((0, 22, 19.6)))] +
             [(p, mover((0, 0, 40)) @ m) for p, m in manivela(0, 30, 1)])
 
 
@@ -201,7 +207,8 @@ def cuenta_historias():
         m = giro(Y, -th) @ mover((0, 0, 22))
         vinetas.append((Forma("vineta", carta, "blanco"), m @ mover((0, 9, 0))))
         vinetas.append((Forma(f"pelota-{k}", esfera(2.2, (0, 3 + alto, 0.9)), "rojo"), m))
-    disco = [("rueda-mediana", M((0, 0, 0))), ("varilla-100", M((0, 50, 0)))] + \
+    disco = [("rueda-mediana", M((0, 0, 0))), ("varilla-100", M((0, 50, 0))),
+             (marca(2, vertical=False), giro(Y, -math.pi / 8) @ mover((0, 5.6, 25)))] + \
         [(f, mover((0, 7, 0)) @ m) for f, m in vinetas]
 
     def movimiento(t):
@@ -222,9 +229,11 @@ def bailarinas():
     fijo += [("tornillo-20", M((x, y, -15), (90, 0, 0))) for x in (-70, 70) for y in (80,)]
     central = [("rueda-mediana", M((0, 0, 0))), ("varilla-100", M((0, 45, 0))),
                ("rueda-mediana", M((0, YT - 110, 0))),
-               (Forma("llanta-top-30", llanta(27.5, 2.5, 3), "negro"), M((0, YT - 110 + 3.5, 0), (90, 0, 0)))]
+               (Forma("llanta-top-30", llanta(27.5, 2.5, 3), "negro"), M((0, YT - 110 + 3.5, 0), (90, 0, 0))),
+               (marca(vertical=False), mover((0, 5.6, 22))), (marca(vertical=False), mover((0, YT - 110 + 5.6, 22)))]
     lado = ([("rueda-pequena", M((0, 0, 0))), ("varilla-60", M((0, -5, 0))),
-             (Forma("llanta-top-20", llanta(17, 3, 3), "negro"), M((0, 3.5, 0), (90, 0, 0)))] +
+             (Forma("llanta-top-20", llanta(17, 3, 3), "negro"), M((0, 3.5, 0), (90, 0, 0))),
+             (marca(2, vertical=False), mover((12, 5.6, 0)))] +
             figuras(bailarina(), mover((0, 25, 0))))
 
     def movimiento(t):

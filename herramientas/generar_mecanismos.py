@@ -18,7 +18,7 @@ from pxr import Gf, Sdf, Usd, UsdGeom, UsdShade, UsdUtils, Vt
 from trimesh.transformations import quaternion_from_matrix
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from generar_piezas import PIEZAS, a_trimesh  # noqa: E402
+from generar_piezas import PIEZAS, TEXTURA, a_trimesh  # noqa: E402
 import mecanismos  # noqa: E402
 
 RAIZ = Path(__file__).resolve().parent.parent
@@ -27,12 +27,21 @@ MM = 0.001
 CUADROS_POR_SEGUNDO = 30
 
 _mallas = {}
+_constructores = {p: (hacer, color) for p, _, _, hacer, color in PIEZAS}
 
 
-def malla(pid):
-    if not _mallas:
-        _mallas.update({p: a_trimesh(hacer(), color) for p, _, _, hacer, color in PIEZAS})
-    return _mallas[pid]
+def capas(mec, pieza):
+    """Capas (mallas en metros) de una parte: pieza del kit por id o Forma propia; se calculan una vez."""
+    if isinstance(pieza, str):
+        clave = pieza
+        if clave not in _mallas:
+            hacer, color = _constructores[pieza]
+            _mallas[clave] = a_trimesh(hacer(), color)
+    else:
+        clave = f"{mec['id']}-{pieza.nombre}"
+        if clave not in _mallas:
+            _mallas[clave] = a_trimesh(pieza.malla, pieza.color, agujeros=False)
+    return clave, _mallas[clave]
 
 
 def a_metros(m):
@@ -101,13 +110,10 @@ def exportar(mec):
         escena.graph.update(frame_from=escena.graph.base_frame, frame_to=nombre,
                             matrix=a_metros(inicio.get(nombre, np.eye(4))))
         for i, (pieza, local) in enumerate(partes):
-            if isinstance(pieza, str):
-                geom, nombre_geom = malla(pieza), pieza
-            else:
-                nombre_geom = f"{mec['id']}-{pieza.nombre}"
-                geom = _mallas.setdefault(nombre_geom, a_trimesh(pieza.malla, pieza.color))
-            escena.add_geometry(geom, node_name=f"{nombre}-{i}", geom_name=nombre_geom,
-                                parent_node_name=nombre, transform=a_metros(local))
+            clave, lista = capas(mec, pieza)
+            for k, capa in enumerate(lista):
+                escena.add_geometry(capa, node_name=f"{nombre}-{i}-{k}", geom_name=f"{clave}#{k}",
+                                    parent_node_name=nombre, transform=a_metros(local))
     ruta = CARPETA / f"{mec['id']}.glb"
     escena.export(ruta)
 
@@ -126,16 +132,35 @@ def exportar(mec):
 
 
 # ---------------------------------------------------------------- USDZ para Quick Look (iPhone)
-def _material(stage, color_lineal, metal, rugosidad, cache):
-    clave = (tuple(color_lineal), metal, rugosidad)
+def _material(stage, pbr, cache):
+    color = tuple(np.asarray(pbr.baseColorFactor[:3], dtype=float) / 255)
+    metal, rugosidad = float(pbr.metallicFactor or 0), float(pbr.roughnessFactor or 0.5)
+    con_textura = pbr.normalTexture is not None
+    clave = (color, metal, rugosidad, con_textura)
     if clave not in cache:
         ruta = f"/raiz/materiales/m{len(cache)}"
         mat = UsdShade.Material.Define(stage, ruta)
         sombreador = UsdShade.Shader.Define(stage, ruta + "/superficie")
         sombreador.CreateIdAttr("UsdPreviewSurface")
-        sombreador.CreateInput("diffuseColor", Sdf.ValueTypeNames.Color3f).Set(Gf.Vec3f(*color_lineal))
+        sombreador.CreateInput("diffuseColor", Sdf.ValueTypeNames.Color3f).Set(Gf.Vec3f(*color))
         sombreador.CreateInput("metallic", Sdf.ValueTypeNames.Float).Set(metal)
         sombreador.CreateInput("roughness", Sdf.ValueTypeNames.Float).Set(rugosidad)
+        if con_textura:
+            # textura de plástico impreso: mapa de normales repetido sobre las coordenadas «st»
+            lector = UsdShade.Shader.Define(stage, ruta + "/st")
+            lector.CreateIdAttr("UsdPrimvarReader_float2")
+            lector.CreateInput("varname", Sdf.ValueTypeNames.String).Set("st")
+            imagen = UsdShade.Shader.Define(stage, ruta + "/normales")
+            imagen.CreateIdAttr("UsdUVTexture")
+            imagen.CreateInput("file", Sdf.ValueTypeNames.Asset).Set(TEXTURA.name)
+            imagen.CreateInput("st", Sdf.ValueTypeNames.Float2).ConnectToSource(lector.ConnectableAPI(), "result")
+            imagen.CreateInput("wrapS", Sdf.ValueTypeNames.Token).Set("repeat")
+            imagen.CreateInput("wrapT", Sdf.ValueTypeNames.Token).Set("repeat")
+            imagen.CreateInput("sourceColorSpace", Sdf.ValueTypeNames.Token).Set("raw")
+            imagen.CreateInput("scale", Sdf.ValueTypeNames.Float4).Set(Gf.Vec4f(2, 2, 2, 1))
+            imagen.CreateInput("bias", Sdf.ValueTypeNames.Float4).Set(Gf.Vec4f(-1, -1, -1, 0))
+            imagen.CreateOutput("rgb", Sdf.ValueTypeNames.Float3)
+            sombreador.CreateInput("normal", Sdf.ValueTypeNames.Normal3f).ConnectToSource(imagen.ConnectableAPI(), "rgb")
         mat.CreateSurfaceOutput().ConnectToSource(sombreador.ConnectableAPI(), "surface")
         cache[clave] = mat
     return cache[clave]
@@ -149,6 +174,7 @@ def exportar_usdz(mec, tiempos, poses):
     ruta = CARPETA / f"{mec['id']}.usdz"
     with tempfile.TemporaryDirectory() as tmp:
         usdc = str(Path(tmp) / f"{mec['id']}.usdc")
+        (Path(tmp) / TEXTURA.name).write_bytes(TEXTURA.read_bytes())
         stage = Usd.Stage.CreateNew(usdc)
         UsdGeom.SetStageUpAxis(stage, UsdGeom.Tokens.y)
         UsdGeom.SetStageMetersPerUnit(stage, 1.0)
@@ -158,7 +184,7 @@ def exportar_usdz(mec, tiempos, poses):
         stage.SetEndTimeCode(len(tiempos) - 1)
         raiz = UsdGeom.Xform.Define(stage, "/raiz")
         stage.SetDefaultPrim(raiz.GetPrim())
-        materiales, geometrias = {}, {}
+        materiales = {}
         for c, (nombre, partes) in enumerate(mec["cuerpos"].items()):
             cuerpo = UsdGeom.Xform.Define(stage, f"/raiz/c{c}")
             op = cuerpo.AddTransformOp()
@@ -168,23 +194,20 @@ def exportar_usdz(mec, tiempos, poses):
             else:
                 op.Set(_matriz_usd(np.eye(4)))
             for i, (pieza, local) in enumerate(partes):
-                geom = malla(pieza) if isinstance(pieza, str) else _mallas[f"{mec['id']}-{pieza.nombre}"]
-                if id(geom) not in geometrias:
-                    suave = geom.smooth_shaded
-                    geometrias[id(geom)] = (suave.vertices, suave.faces, suave.vertex_normals)
-                vertices, caras, normales = geometrias[id(geom)]
-                malla_usd = UsdGeom.Mesh.Define(stage, f"/raiz/c{c}/p{i}")
-                malla_usd.AddTransformOp().Set(_matriz_usd(a_metros(local)))
-                malla_usd.CreatePointsAttr(Vt.Vec3fArray.FromNumpy(np.asarray(vertices, dtype=np.float32)))
-                malla_usd.CreateFaceVertexCountsAttr(Vt.IntArray([3] * len(caras)))
-                malla_usd.CreateFaceVertexIndicesAttr(Vt.IntArray(np.asarray(caras).ravel().tolist()))
-                malla_usd.CreateNormalsAttr(Vt.Vec3fArray.FromNumpy(np.asarray(normales, dtype=np.float32)))
-                malla_usd.SetNormalsInterpolation(UsdGeom.Tokens.vertex)
-                malla_usd.CreateSubdivisionSchemeAttr(UsdGeom.Tokens.none)
-                pbr = geom.visual.material
-                color = np.asarray(pbr.baseColorFactor[:3], dtype=float) / 255
-                UsdShade.MaterialBindingAPI.Apply(malla_usd.GetPrim()).Bind(
-                    _material(stage, color, float(pbr.metallicFactor or 0), float(pbr.roughnessFactor or 0.5), materiales))
+                for k, capa in enumerate(capas(mec, pieza)[1]):
+                    malla_usd = UsdGeom.Mesh.Define(stage, f"/raiz/c{c}/p{i}_{k}")
+                    malla_usd.AddTransformOp().Set(_matriz_usd(a_metros(local)))
+                    malla_usd.CreatePointsAttr(Vt.Vec3fArray.FromNumpy(np.asarray(capa.vertices, dtype=np.float32)))
+                    malla_usd.CreateFaceVertexCountsAttr(Vt.IntArray([3] * len(capa.faces)))
+                    malla_usd.CreateFaceVertexIndicesAttr(Vt.IntArray(np.asarray(capa.faces).ravel().tolist()))
+                    malla_usd.CreateNormalsAttr(Vt.Vec3fArray.FromNumpy(np.asarray(capa.vertex_normals, dtype=np.float32)))
+                    malla_usd.SetNormalsInterpolation(UsdGeom.Tokens.vertex)
+                    malla_usd.CreateSubdivisionSchemeAttr(UsdGeom.Tokens.none)
+                    UsdGeom.PrimvarsAPI(malla_usd).CreatePrimvar(
+                        "st", Sdf.ValueTypeNames.TexCoord2fArray, UsdGeom.Tokens.vertex).Set(
+                        Vt.Vec2fArray.FromNumpy(np.asarray(capa.visual.uv, dtype=np.float32)))
+                    UsdShade.MaterialBindingAPI.Apply(malla_usd.GetPrim()).Bind(
+                        _material(stage, capa.visual.material, materiales))
         stage.GetRootLayer().Save()
         UsdUtils.CreateNewUsdzPackage(Sdf.AssetPath(usdc), str(ruta))
     return ruta

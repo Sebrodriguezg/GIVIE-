@@ -15,16 +15,25 @@ const INCLINACION_MAX = 0.3; // rad
 export async function montar(contenedor, { abrirVentana }) {
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
   renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   const escena = new THREE.Scene();
   escena.environment = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04).texture;
   const luz = new THREE.DirectionalLight(0xffffff, 1.5);
-  luz.position.set(0.3, 0.6, 0.5);
+  luz.position.set(0.25, 0.6, 0.35);
+  // sombras: el brazo y las pesas proyectan sombra sobre la estructura y el piso
+  luz.castShadow = true;
+  luz.shadow.mapSize.set(1024, 1024);
+  Object.assign(luz.shadow.camera, { left: -0.28, right: 0.28, top: 0.28, bottom: -0.28, near: 0.2, far: 1.4 });
+  luz.shadow.bias = -0.0004;
+  luz.shadow.normalBias = 0.0015;
+  luz.shadow.radius = 4;
   escena.add(luz, new THREE.HemisphereLight(0xfff8e8, 0x8a7f6a, 0.7));
 
   const camara = new THREE.PerspectiveCamera(35, 1, 0.01, 10);
-  camara.position.set(0.1, 0.15, 0.4);
+  camara.position.set(0.1, 0.14, 0.44);
   const controles = new OrbitControls(camara, renderer.domElement);
-  controles.target.set(0, 0.118, 0);
+  controles.target.set(0, 0.104, 0);
   controles.enablePan = false;
   controles.enableDamping = true;
   controles.minDistance = 0.22;
@@ -35,9 +44,11 @@ export async function montar(contenedor, { abrirVentana }) {
   const brazo = grupos.brazo;
   const pivote = brazo.userData.pivote;
   escena.add(raiz);
-  const piso = new THREE.Mesh(new THREE.CircleGeometry(0.11, 48), new THREE.MeshStandardMaterial({ color: 0xe6dcc2, roughness: 1 }));
+  // piso invisible: solo muestra la sombra de la balanza sobre el fondo
+  const piso = new THREE.Mesh(new THREE.PlaneGeometry(0.8, 0.8), new THREE.ShadowMaterial({ opacity: 0.22 }));
   piso.rotation.x = -Math.PI / 2;
   piso.position.y = -0.0005;
+  piso.receiveShadow = true;
   escena.add(piso);
 
   const posiciones = definicion.pesas.posiciones;
@@ -49,6 +60,8 @@ export async function montar(contenedor, { abrirVentana }) {
     brazo.add(g);
     return g;
   }));
+
+  escena.traverse(o => { if (o.isMesh && o !== piso) { o.castShadow = true; o.receiveShadow = true; } });
 
   contenedor.querySelector('.lab-cargando')?.remove();
   contenedor.append(renderer.domElement);

@@ -36,9 +36,11 @@ python3 -m http.server 8765
 ### Regenerar los modelos 3D
 
 Las medidas están en `herramientas/generar_piezas.py` (y explicadas en `recursos/piezas/medidas.md`).
+Cada pieza sale en dos capas (cuerpo e interior de los agujeros, más oscuro), con biseles en los
+bordes y una textura sutil de plástico impreso (`modelos/texturas/plastico.jpg`, mapa de normales).
 
 ```bash
-uv venv .venv && uv pip install --python .venv/bin/python trimesh manifold3d numpy scipy pygltflib usd-core
+uv venv .venv && uv pip install --python .venv/bin/python trimesh manifold3d numpy scipy pillow rtree pygltflib usd-core
 .venv/bin/python herramientas/generar_piezas.py      # piezas
 .venv/bin/python herramientas/generar_mecanismos.py  # mecanismos armados (AR)
 ```

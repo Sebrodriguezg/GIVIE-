@@ -122,10 +122,11 @@ async function mostrar(id, desplazar = false) {
       <div class="lab-panel">
         <h4>Míralo moverse</h4>
         <p>${m.pista}</p>
-        <p>Gira el modelo arrastrando el dedo o el mouse.</p>
+        <p>Gira el modelo arrastrando el dedo o el mouse. Las marcas rojas ayudan a contar las vueltas.</p>
         <div class="lab-botones">
           <button type="button" class="boton boton-rojo" id="lab-ar">Ver en mi mesa (AR)</button>
           <button type="button" class="boton boton-claro" id="lab-pausa">Pausar</button>
+          <button type="button" class="boton boton-claro" id="lab-lento">Más lento</button>
         </div>
       </div>
     </div>` : ''}
@@ -160,6 +161,11 @@ async function mostrar(id, desplazar = false) {
     $('#lab-ar').addEventListener('click', () => verEnMesa(m, abrirVentana, visor));
     $('#lab-pausa').addEventListener('click', e => {
       if (visor.paused) { visor.play(); e.target.textContent = 'Pausar'; } else { visor.pause(); e.target.textContent = 'Seguir'; }
+    });
+    $('#lab-lento').addEventListener('click', e => {
+      const lento = visor.timeScale === 1;
+      visor.timeScale = lento ? 0.35 : 1;
+      e.target.textContent = lento ? 'Velocidad normal' : 'Más lento';
     });
     prepararVisor();
   }

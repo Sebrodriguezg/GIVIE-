@@ -226,7 +226,7 @@ main, .pie { position: relative; z-index: 1; }
 .lab-escena canvas { display: block; width: 100%; height: 100%; }
 .lab-cargando { position: absolute; inset: 0; display: grid; place-items: center; font-family: var(--mano); font-size: 1.4rem; color: var(--gris); }
 .lab-pista {
-  position: absolute; left: 12px; bottom: 12px; right: 12px;
+  position: absolute; left: 12px; bottom: 12px; max-width: calc(100% - 24px);
   font-family: var(--mano); font-size: 1.15rem; color: var(--tinta);
   background: rgba(255, 255, 255, .85); border-radius: 12px; padding: 6px 12px; pointer-events: none;
 }
@@ -304,6 +304,7 @@ main, .pie { position: relative; z-index: 1; }
   #cartilla { grid-template-columns: 1fr; }
   .lab { grid-template-columns: 1fr; }
   .lab-escena { min-height: 340px; }
+  .lab-pista { font-size: .95rem; padding: 3px 9px; bottom: 8px; left: 8px; }
   .puertas { grid-template-columns: 1fr 1fr; }
 }
 @media (max-width: 560px) {
