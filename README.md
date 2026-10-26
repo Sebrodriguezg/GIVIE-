@@ -60,6 +60,7 @@ Todo se configura en `datos/config.json`, sin tocar código:
   },
   "galeria": {
     "carpeta": "https://drive.google.com/drive/folders/...",
+    "hoja": "https://docs.google.com/spreadsheets/d/...",
     "formulario": "https://forms.gle/..."
   }
 }
@@ -71,6 +72,9 @@ Todo se configura en `datos/config.json`, sin tocar código:
   La Action `.github/workflows/galeria.yml` revisa la carpeta cada 3 horas, escribe `datos/galeria.json`
   y vuelve a publicar la página. Para actualizar ya: pestaña **Actions → Actualizar galería → Run workflow**.
   Mientras no exista `galeria.json`, la página muestra la carpeta de Drive incrustada.
+- `hoja` (opcional): la hoja de respuestas del formulario. De ella solo se toman el nombre del
+  modelo, el autor y la fecha, para el pie de cada foto; nunca correos ni otros datos.
+  Solo se muestra lo que está en la carpeta: sacar un archivo de la carpeta lo quita de la web.
 - `formulario` (opcional) muestra el botón «Sube tu diseño».
 
 ### Publicar

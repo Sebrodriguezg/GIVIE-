@@ -1,10 +1,16 @@
 {
   "videos": {
     "lista_reproduccion": "",
-    "videos": []
+    "videos": [
+      {
+        "url": "https://www.youtube.com/watch?v=ni6dUNW4YeI",
+        "titulo": "Video de prueba"
+      }
+    ]
   },
   "galeria": {
-    "carpeta": "",
+    "carpeta": "https://drive.google.com/drive/folders/1YdZ70hBnjjkp6DgjnT810pb-sK4hhwO9HInV3Bb6OxWKylrKvpBZbBKpHYfbUAvUvLVpZNyI",
+    "hoja": "https://docs.google.com/spreadsheets/d/1AeKpECRDTADjJNl-EBBkOkify0yCrZmxP16EOoosz88/edit",
     "formulario": ""
   }
 }

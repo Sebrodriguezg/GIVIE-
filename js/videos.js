@@ -4,6 +4,7 @@
 // El reproductor solo se carga al tocar el video (más liviano y sin cookies hasta entonces).
 
 const $ = sel => document.querySelector(sel);
+const esc = texto => String(texto).replace(/[&<>"']/g, ch => `&#${ch.charCodeAt(0)};`);
 
 export function idVideo(url) {
   const m = String(url).match(/(?:youtu\.be\/|v=|\/embed\/|\/shorts\/|\/live\/)([\w-]{11})/);
@@ -22,13 +23,13 @@ function reproductor(src, titulo) {
 function tarjeta(v) {
   const id = idVideo(v.url ?? v.id);
   if (!id) return '';
-  const titulo = v.titulo ?? 'Video';
+  const titulo = esc(v.titulo ?? 'Video');
   return `<article class="video">
     <button type="button" class="video-portada" data-id="${id}" aria-label="Reproducir: ${titulo}">
       <img src="https://i.ytimg.com/vi/${id}/hqdefault.jpg" alt="" loading="lazy">
       <span class="video-play" aria-hidden="true">▶</span>
     </button>
-    <h3>${titulo}</h3>${v.descripcion ? `<p>${v.descripcion}</p>` : ''}
+    <h3>${titulo}</h3>${v.descripcion ? `<p>${esc(v.descripcion)}</p>` : ''}
   </article>`;
 }
 
@@ -48,7 +49,7 @@ async function iniciar() {
   contenedor.addEventListener('click', e => {
     const boton = e.target.closest('.video-portada');
     if (!boton) return;
-    const titulo = boton.closest('.video').querySelector('h3').textContent;
+    const titulo = esc(boton.closest('.video').querySelector('h3').textContent);
     boton.outerHTML = `<div class="video-portada">${reproductor(`https://www.youtube-nocookie.com/embed/${boton.dataset.id}?autoplay=1&rel=0`, titulo)}</div>`;
   });
 }

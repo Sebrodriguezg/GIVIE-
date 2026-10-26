@@ -1,12 +1,23 @@
-// Galería de diseños desde una carpeta pública de Google Drive.
+// Galería de diseños (fotos y videos) desde una carpeta pública de Google Drive.
 // datos/galeria.json lo genera herramientas/actualizar_galeria.py (lo corre una GitHub Action
 // cada pocas horas). Si todavía no existe, se muestra la carpeta de Drive incrustada.
 
 const $ = sel => document.querySelector(sel);
 const imagen = (id, ancho) => `https://lh3.googleusercontent.com/d/${id}=w${ancho}`;
+// títulos y autores los escribe el público en el formulario: siempre escapados
+const esc = texto => String(texto).replace(/[&<>"']/g, ch => `&#${ch.charCodeAt(0)};`);
+const idCarpeta = valor => (String(valor).match(/folders\/([\w-]+)/) ?? [, valor])[1];
 
 function sinExtension(nombre) {
   return nombre.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ');
+}
+
+function titulo(im) {
+  return esc(im.titulo || sinExtension(im.nombre));
+}
+
+function pie(im) {
+  return im.autor ? `${titulo(im)} · por ${esc(im.autor)}` : titulo(im);
 }
 
 function visor(imagenes, inicio) {
@@ -16,13 +27,15 @@ function visor(imagenes, inicio) {
   fondo.innerHTML = `
     <button class="visor-flecha visor-ant" aria-label="Anterior">‹</button>
     <figure class="ventana-caja"><button class="ventana-cerrar" aria-label="Cerrar">×</button>
-      <img alt=""><figcaption></figcaption></figure>
+      <div class="visor-medio"></div><figcaption></figcaption></figure>
     <button class="visor-flecha visor-sig" aria-label="Siguiente">›</button>`;
-  const img = fondo.querySelector('img'), pie = fondo.querySelector('figcaption');
+  const medio = fondo.querySelector('.visor-medio'), leyenda = fondo.querySelector('figcaption');
   const mostrar = () => {
     const actual = imagenes[i];
-    img.src = imagen(actual.id, 2000);
-    img.alt = pie.textContent = sinExtension(actual.nombre);
+    medio.innerHTML = actual.tipo === 'video'
+      ? `<iframe src="https://drive.google.com/file/d/${actual.id}/preview" allow="autoplay; fullscreen" allowfullscreen title="${titulo(actual)}"></iframe>`
+      : `<img src="${imagen(actual.id, 2000)}" alt="${titulo(actual)}">`;
+    leyenda.innerHTML = pie(actual);
   };
   const paso = d => { i = (i + d + imagenes.length) % imagenes.length; mostrar(); };
   const cerrar = () => { fondo.remove(); removeEventListener('keydown', tecla); };
@@ -59,7 +72,9 @@ async function iniciar() {
   if (imagenes.length) {
     contenedor.innerHTML = `<div class="galeria">${imagenes.map((im, k) => `
       <button type="button" class="galeria-item" data-k="${k}">
-        <img src="${imagen(im.id, 600)}" alt="${sinExtension(im.nombre)}" loading="lazy">
+        <img src="${imagen(im.id, 600)}" alt="${titulo(im)}" loading="lazy">
+        ${im.tipo === 'video' ? '<span class="video-play" aria-hidden="true">▶</span>' : ''}
+        <span class="galeria-pie"><b>${titulo(im)}</b>${im.autor ? `<span>${esc(im.autor)}</span>` : ''}</span>
       </button>`).join('')}</div>`;
     contenedor.addEventListener('click', e => {
       const b = e.target.closest('.galeria-item');
@@ -67,7 +82,7 @@ async function iniciar() {
     });
   } else if (galeria.carpeta) {
     contenedor.innerHTML = `<iframe class="galeria-drive" title="Galería en Google Drive"
-      src="https://drive.google.com/embeddedfolderview?id=${encodeURIComponent(galeria.carpeta)}#grid"></iframe>`;
+      src="https://drive.google.com/embeddedfolderview?id=${encodeURIComponent(idCarpeta(galeria.carpeta))}#grid"></iframe>`;
   } else {
     contenedor.innerHTML = '<div class="espacio-pronto">Pronto: aquí se verán los diseños y prototipos que la gente comparta.</div>';
   }
