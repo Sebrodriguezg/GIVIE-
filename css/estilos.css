@@ -37,6 +37,7 @@ section[id] { scroll-margin-top: 64px; }
   width: 100vw; height: 100vh;
   z-index: 0; pointer-events: none;
 }
+@media (pointer: coarse) { #fondo { height: 100lvh; } } /* no cambia con la barra del celular */
 main, .pie { position: relative; z-index: 1; }
 .etiqueta-pieza {
   position: fixed; z-index: 30;

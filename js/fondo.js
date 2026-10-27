@@ -46,7 +46,7 @@ async function poblar() {
   document.dispatchEvent(new CustomEvent('fondo:conjunto', { detail: conjunto.nombre }));
   const cat = (await catalogo()).filter(p => p.categoria !== 'accesorios');
   const ids = conjunto.ids ?? cat.map(p => p.id);
-  const paginas = document.documentElement.scrollHeight / innerHeight;
+  const paginas = document.documentElement.scrollHeight / altoFijo;
   const total = Math.round(Math.min(celular ? 24 : 46, 6 + paginas * PARALAJE * (celular ? 4.5 : 8)));
   const recorrido = (paginas - 1) * ALTO_VISTA * PARALAJE;
 
@@ -76,7 +76,7 @@ async function poblar() {
         eje: new THREE.Vector3(azar(-1, 1), azar(-1, 1), azar(-1, 1)).normalize(),
         vel: azar(0.5, 1.4) * (Math.random() < 0.5 ? -1 : 1),
         empuje: 0,
-        bamboleo: azar(0.6, 1.4) * (Math.random() < 0.3 ? -1 : 1),
+        bamboleo: azar(2.0, 3.5) * (Math.random() < 0.3 ? -1 : 1),
       };
       pivote.position.copy(pivote.userData.salida);
       escena.add(pivote);
@@ -87,64 +87,100 @@ async function poblar() {
   inicio = performance.now();
 }
 
+// En el celular la barra de direcciones aparece y se esconde al hacer scroll y cambia innerHeight.
+// Se usa un alto fijo (el mayor visto con este ancho) para que el fondo no salte ni se redimensione.
+const tactil = matchMedia('(pointer: coarse)').matches;
+let anchoVisto = 0, altoFijo = innerHeight;
 function ajustar() {
-  const w = innerWidth, h = innerHeight;
-  renderer.setSize(w, h, false);
-  camara.aspect = w / h;
+  const w = innerWidth;
+  if (tactil && w === anchoVisto && innerHeight <= altoFijo) return;
+  altoFijo = tactil && w !== anchoVisto ? Math.max(innerHeight, document.documentElement.clientHeight) : innerHeight;
+  anchoVisto = w;
+  renderer.setSize(w, altoFijo, false);
+  camara.aspect = w / altoFijo;
   camara.updateProjectionMatrix();
 }
 
-// giroscopio: al inclinar el celular las piezas se tambalean un poco (resorte poco amortiguado)
-const giro = { meta: new THREE.Vector2(), valor: new THREE.Vector2(), vel: new THREE.Vector2(), base: null };
-const MAX_INCLINACION = 25; // grados
+// giroscopio: al inclinar o sacudir el celular las piezas se tambalean (resorte poco amortiguado)
+const giro = {
+  lectura: null, base: null,
+  meta: new THREE.Vector2(), valor: new THREE.Vector2(), vel: new THREE.Vector2(),
+};
+const MAX_INCLINACION = THREE.MathUtils.degToRad(35);
+
+function ejesPantalla(a, b) {
+  // lleva un vector del aparato a los ejes de la pantalla, también con el celular de lado
+  const ang = THREE.MathUtils.degToRad(screen.orientation?.angle ?? window.orientation ?? 0);
+  return [a * Math.cos(ang) + b * Math.sin(ang), b * Math.cos(ang) - a * Math.sin(ang)];
+}
 
 function orientacion(e) {
   if (e.beta == null || e.gamma == null) return;
-  // llevar la lectura a los ejes de la pantalla, también con el celular de lado
-  const a = THREE.MathUtils.degToRad(screen.orientation?.angle ?? window.orientation ?? 0);
-  const x = e.beta * Math.cos(a) + e.gamma * Math.sin(a);
-  const y = e.gamma * Math.cos(a) - e.beta * Math.sin(a);
-  // la posición de referencia sigue despacio a la mano, así solo cuentan los cambios
-  if (!giro.base) giro.base = new THREE.Vector2(x, y);
-  giro.base.lerp(new THREE.Vector2(x, y), 0.02);
-  const lim = v => THREE.MathUtils.clamp(v, -MAX_INCLINACION, MAX_INCLINACION);
-  giro.meta.set(lim(x - giro.base.x), lim(y - giro.base.y)).multiplyScalar(Math.PI / 180);
+  const [x, y] = ejesPantalla(e.beta, e.gamma);
+  giro.lectura = new THREE.Vector2(x, y).multiplyScalar(Math.PI / 180);
+  giro.base ??= giro.lectura.clone();
+}
+
+function sacudida(e) {
+  const a = e.acceleration;
+  if (a?.x == null) return;
+  const [x, y] = ejesPantalla(a.y, a.x);
+  giro.vel.x += THREE.MathUtils.clamp(x, -12, 12) * 0.12;
+  giro.vel.y += THREE.MathUtils.clamp(y, -12, 12) * 0.12;
 }
 
 function activarGiroscopio() {
   if (reducido || !('DeviceOrientationEvent' in window)) return;
-  const DOE = window.DeviceOrientationEvent;
-  if (typeof DOE.requestPermission !== 'function') {
+  const escuchar = () => {
     addEventListener('deviceorientation', orientacion);
-    return;
-  }
-  // iPhone: el permiso solo se puede pedir después de un toque
-  const pedir = () => DOE.requestPermission()
-    .then(r => { if (r === 'granted') addEventListener('deviceorientation', orientacion); })
-    .catch(() => {});
-  addEventListener('touchend', pedir, { once: true });
+    addEventListener('devicemotion', sacudida);
+  };
+  const DOE = window.DeviceOrientationEvent;
+  if (typeof DOE.requestPermission !== 'function') { escuchar(); return; }
+  // iPhone: el permiso solo se puede pedir después de un toque; se insiste hasta que la persona responda
+  const pedir = () => Promise.all([
+    DOE.requestPermission(),
+    window.DeviceMotionEvent?.requestPermission?.() ?? 'granted',
+  ]).then(([o]) => {
+    removeEventListener('touchend', pedir);
+    if (o === 'granted') escuchar();
+  }).catch(() => {});
+  addEventListener('touchend', pedir);
 }
 
 const q = new THREE.Quaternion();
 const qGiro = new THREE.Quaternion();
 const eGiro = new THREE.Euler();
 let antes = performance.now();
+let desplazado = 0;
 function cuadro(ahora) {
   const t = (ahora - inicio) / 1000;
   const dt = Math.min((ahora - antes) / 1000, 0.05);
   antes = ahora;
-  const desplazado = scrollY / innerHeight;
+  // el scroll se sigue con suavidad: un salto brusco se reparte en unos pocos cuadros
+  const meta = scrollY / altoFijo;
+  desplazado += (meta - desplazado) * (1 - Math.exp(-dt * 10));
+  if (Math.abs(meta - desplazado) > 3) desplazado = meta; // saltos largos (enlaces del menú)
   camara.position.y = -desplazado * ALTO_VISTA * PARALAJE;
-  // resorte: k = 40, c = 4 → oscila un par de veces antes de quedarse quieto
-  giro.vel.addScaledVector(giro.meta.clone().sub(giro.valor).multiplyScalar(40).addScaledVector(giro.vel, -4), dt);
+  if (giro.lectura) {
+    // la posición de referencia sigue a la mano en unos 4 s: cuentan los cambios, no cómo se sostiene
+    giro.base.lerp(giro.lectura, Math.min(dt / 4, 1));
+    giro.meta.subVectors(giro.lectura, giro.base).clampScalar(-MAX_INCLINACION, MAX_INCLINACION);
+  }
+  // resorte: k = 30, c = 2.2 → rebota varias veces antes de quedarse quieto
+  giro.vel.addScaledVector(giro.meta.clone().sub(giro.valor).multiplyScalar(30).addScaledVector(giro.vel, -2.2), dt);
   giro.valor.addScaledVector(giro.vel, dt);
-  camara.position.x = giro.valor.y * 0.6;
+  camara.position.x = -giro.valor.y * 0.8; // en contra de las piezas: suma, no resta
   for (const p of flotantes) {
     const d = p.userData;
     const k = Math.min(Math.max((t - d.retraso) / 1.4, 0), 1);
     const suave = 1 - Math.pow(1 - k, 3);
     p.position.lerpVectors(d.salida, d.destino, suave);
     if (!reducido) p.position.y += Math.sin(t * 0.6 + d.retraso * 9) * 0.06;
+    // las piezas más cercanas se corren más: sensación de profundidad
+    const cerca = 1 + (d.destino.z + 5) * 0.5;
+    p.position.x += giro.valor.y * cerca * 1.8;
+    p.position.y -= giro.valor.x * cerca * 1.8;
     d.empuje *= 0.96;
     const angulo = desplazado * 1.6 * d.vel + (reducido ? 0 : t * 0.12 * d.vel) + d.empuje;
     q.setFromAxisAngle(d.eje, angulo);
@@ -162,7 +198,7 @@ let nombres = {};
 let ocultar;
 addEventListener('pointerdown', e => {
   if (e.target.closest('a, button, input, .lab-escena, .pregunta, .ventana, .paginas, .mecanismos')) return;
-  rayo.setFromCamera(new THREE.Vector2(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1), camara);
+  rayo.setFromCamera(new THREE.Vector2(e.clientX / innerWidth * 2 - 1, -(e.clientY / altoFijo) * 2 + 1), camara);
   const golpe = rayo.intersectObjects(flotantes, true)[0];
   if (!golpe) return;
   let p = golpe.object;
