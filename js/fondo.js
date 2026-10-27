@@ -76,6 +76,7 @@ async function poblar() {
         eje: new THREE.Vector3(azar(-1, 1), azar(-1, 1), azar(-1, 1)).normalize(),
         vel: azar(0.5, 1.4) * (Math.random() < 0.5 ? -1 : 1),
         empuje: 0,
+        bamboleo: azar(0.6, 1.4) * (Math.random() < 0.3 ? -1 : 1),
       };
       pivote.position.copy(pivote.userData.salida);
       escena.add(pivote);
@@ -93,11 +94,51 @@ function ajustar() {
   camara.updateProjectionMatrix();
 }
 
+// giroscopio: al inclinar el celular las piezas se tambalean un poco (resorte poco amortiguado)
+const giro = { meta: new THREE.Vector2(), valor: new THREE.Vector2(), vel: new THREE.Vector2(), base: null };
+const MAX_INCLINACION = 25; // grados
+
+function orientacion(e) {
+  if (e.beta == null || e.gamma == null) return;
+  // llevar la lectura a los ejes de la pantalla, también con el celular de lado
+  const a = THREE.MathUtils.degToRad(screen.orientation?.angle ?? window.orientation ?? 0);
+  const x = e.beta * Math.cos(a) + e.gamma * Math.sin(a);
+  const y = e.gamma * Math.cos(a) - e.beta * Math.sin(a);
+  // la posición de referencia sigue despacio a la mano, así solo cuentan los cambios
+  if (!giro.base) giro.base = new THREE.Vector2(x, y);
+  giro.base.lerp(new THREE.Vector2(x, y), 0.02);
+  const lim = v => THREE.MathUtils.clamp(v, -MAX_INCLINACION, MAX_INCLINACION);
+  giro.meta.set(lim(x - giro.base.x), lim(y - giro.base.y)).multiplyScalar(Math.PI / 180);
+}
+
+function activarGiroscopio() {
+  if (reducido || !('DeviceOrientationEvent' in window)) return;
+  const DOE = window.DeviceOrientationEvent;
+  if (typeof DOE.requestPermission !== 'function') {
+    addEventListener('deviceorientation', orientacion);
+    return;
+  }
+  // iPhone: el permiso solo se puede pedir después de un toque
+  const pedir = () => DOE.requestPermission()
+    .then(r => { if (r === 'granted') addEventListener('deviceorientation', orientacion); })
+    .catch(() => {});
+  addEventListener('touchend', pedir, { once: true });
+}
+
 const q = new THREE.Quaternion();
+const qGiro = new THREE.Quaternion();
+const eGiro = new THREE.Euler();
+let antes = performance.now();
 function cuadro(ahora) {
   const t = (ahora - inicio) / 1000;
+  const dt = Math.min((ahora - antes) / 1000, 0.05);
+  antes = ahora;
   const desplazado = scrollY / innerHeight;
   camara.position.y = -desplazado * ALTO_VISTA * PARALAJE;
+  // resorte: k = 40, c = 4 → oscila un par de veces antes de quedarse quieto
+  giro.vel.addScaledVector(giro.meta.clone().sub(giro.valor).multiplyScalar(40).addScaledVector(giro.vel, -4), dt);
+  giro.valor.addScaledVector(giro.vel, dt);
+  camara.position.x = giro.valor.y * 0.6;
   for (const p of flotantes) {
     const d = p.userData;
     const k = Math.min(Math.max((t - d.retraso) / 1.4, 0), 1);
@@ -108,6 +149,8 @@ function cuadro(ahora) {
     const angulo = desplazado * 1.6 * d.vel + (reducido ? 0 : t * 0.12 * d.vel) + d.empuje;
     q.setFromAxisAngle(d.eje, angulo);
     p.quaternion.copy(d.base).premultiply(q);
+    eGiro.set(giro.valor.x * d.bamboleo, giro.valor.y * d.bamboleo, giro.valor.y * d.bamboleo * 0.4);
+    p.quaternion.premultiply(qGiro.setFromEuler(eGiro));
   }
   renderer.render(escena, camara);
 }
@@ -137,6 +180,7 @@ ajustar();
 addEventListener('resize', ajustar);
 catalogo().then(c => { nombres = Object.fromEntries(c.map(p => [p.id, p.nombre])); });
 poblar();
+activarGiroscopio();
 renderer.setAnimationLoop(cuadro);
 document.addEventListener('visibilitychange', () => {
   renderer.setAnimationLoop(document.hidden ? null : cuadro);
