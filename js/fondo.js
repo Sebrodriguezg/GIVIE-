@@ -131,8 +131,20 @@ const etiqueta = document.getElementById('etiqueta-pieza');
 const rayo = new THREE.Raycaster();
 let nombres = {};
 let ocultar;
+// ¿Lo que hay bajo el dedo tapa el fondo? (una tarjeta, una imagen, una franja de color...)
+function tapado(el) {
+  for (; el && el !== document.body && el !== document.documentElement; el = el.parentElement) {
+    if (el.matches('a, button, input, select, textarea, img, video, iframe, canvas, svg, model-viewer')) return true;
+    const estilo = getComputedStyle(el);
+    if (estilo.backgroundImage !== 'none') return true;
+    const alfa = estilo.backgroundColor.match(/[\d.]+/g)?.[3];
+    if (estilo.backgroundColor !== 'transparent' && (alfa === undefined || Number(alfa) > 0.3)) return true;
+  }
+  return false;
+}
+
 addEventListener('pointerdown', e => {
-  if (e.target.closest('a, button, input, .lab-escena, .pregunta, .ventana, .paginas, .mecanismos')) return;
+  if (tapado(e.target)) return;
   rayo.setFromCamera(new THREE.Vector2(e.clientX / innerWidth * 2 - 1, -(e.clientY / altoFijo) * 2 + 1), camara);
   const golpe = rayo.intersectObjects(flotantes, true)[0];
   if (!golpe) return;
