@@ -1,6 +1,14 @@
 {
  "imagenes": [
   {
+   "id": "1jn12gTBYJg3wuwJU0CTaRHklCdiUtPcO",
+   "nombre": "image - Sebastian Rodriguez garcia.jpg",
+   "tipo": "imagen",
+   "titulo": "Patas",
+   "autor": "Sebastian",
+   "fecha": "2026-10-27T16:19:14"
+  },
+  {
    "id": "1IvenPbt-QHUOCIASA-1nuh4RrPQ8AXzg",
    "nombre": "image - Sebastian Rodriguez garcia.jpg",
    "tipo": "imagen",
