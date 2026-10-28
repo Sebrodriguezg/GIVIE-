@@ -51,6 +51,28 @@ async function poblar() {
   const total = Math.round(Math.min(celular ? 40 : 72 * ancho, (10 + paginas * PARALAJE * (celular ? 7.5 : 13)) * ancho));
   const recorrido = (paginas - 1) * ALTO_VISTA * PARALAJE;
 
+  // Cada pieza ocupa una esfera que la envuelve en cualquier orientación; si las esferas no se tocan,
+  // las piezas nunca se atraviesan por más que giren.
+  const ocupadas = [];
+  const MARGEN = 0.15; // también cubre el leve flotar de arriba abajo
+  function ubicar(i, radio) {
+    const lado = i % 2 ? 1 : -1;
+    for (let intento = 0; intento < 40; intento++) {
+      // en pantallas anchas llegan hasta los bordes: el ancho visible depende de la profundidad z
+      const z = azar(-5, 1);
+      const medioAncho = (camara.position.z - z) * Math.tan(THREE.MathUtils.degToRad(20)) * innerWidth / altoFijo;
+      const x = celular ? azar(0.9, 2.4) : azar(Math.max(2.2, medioAncho * 0.3), medioAncho * 0.95);
+      const franja = intento < 20 ? 1 : 3; // si no cabe en su altura, se busca un poco más arriba o abajo
+      const y = ALTO_VISTA / 2 - (i + azar(-franja, franja) + 0.5) / total * (recorrido + ALTO_VISTA);
+      const punto = new THREE.Vector3(lado * x, y, z);
+      if (ocupadas.every(o => o.centro.distanceTo(punto) > o.radio + radio + MARGEN)) {
+        ocupadas.push({ centro: punto, radio });
+        return punto;
+      }
+    }
+    return null;
+  }
+
   const tareas = [];
   for (let i = 0; i < total; i++) {
     const id = ids[i % ids.length];
@@ -60,19 +82,15 @@ async function poblar() {
       obj.position.sub(caja.getCenter(new THREE.Vector3()));
       const pivote = new THREE.Group();
       pivote.add(obj);
-      const escala = azar(1.0, 1.9) / Math.max(tam.x, tam.y, tam.z);
-      pivote.scale.setScalar(escala);
-      // repartidas a lo largo de toda la página, alternando lados para no tapar el centro
-      // en pantallas anchas llegan hasta los bordes: el ancho visible depende de la profundidad z
-      const lado = i % 2 ? 1 : -1;
-      const z = azar(-5, 1);
-      const medioAncho = (camara.position.z - z) * Math.tan(THREE.MathUtils.degToRad(20)) * innerWidth / altoFijo;
-      const x = celular ? azar(0.9, 2.4) : azar(Math.max(2.2, medioAncho * 0.3), medioAncho * 0.95);
-      const destino = new THREE.Vector3(
-        lado * x,
-        ALTO_VISTA / 2 - (i + Math.random()) / total * (recorrido + ALTO_VISTA),
-        z,
-      );
+      // repartidas a lo largo de toda la página, alternando lados para no tapar el centro;
+      // si no hay espacio libre se prueba más pequeña, y si aun así no cabe, se omite
+      let escala = azar(1.0, 1.9) / Math.max(tam.x, tam.y, tam.z);
+      let destino = null;
+      for (let k = 0; k < 3 && !destino; k++, escala *= 0.8) {
+        destino = ubicar(i, tam.length() / 2 * escala);
+        if (destino) pivote.scale.setScalar(escala);
+      }
+      if (!destino) return;
       pivote.userData = {
         id, destino,
         salida: destino.clone().add(new THREE.Vector3(azar(-8, 8), azar(4, 10), azar(-8, 4))),
