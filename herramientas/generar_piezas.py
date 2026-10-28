@@ -219,9 +219,20 @@ def tornillo(largo):
     return (cabeza - cruz) + rosca(largo + 0.3)
 
 
+DELGADEZ_TUERCA = 0.7   # las tuercas del kit son un 30 % más bajas que el primer modelo
+
+
+def rosca_interna(alto):
+    """Hueco roscado a lo largo de Y, centrado: una varilla roscada (un poco holgada) que se resta.
+    Sobresale por ambos lados para que la punta achaflanada quede por fuera."""
+    largo = alto + 2
+    return rosca(largo, r_ext=2.05, r_int=1.6).translate([0, -largo / 2, 0])
+
+
 def tuerca():
-    hexagono = Manifold.cylinder(3.2, 4.0, 4.0, 6, True).rotate([90, 0, 0])
-    return hexagono - cilindro(1.95, 5)
+    alto = 3.2 * DELGADEZ_TUERCA
+    hexagono = Manifold.cylinder(alto, 4.0, 4.0, 6, True).rotate([90, 0, 0])
+    return hexagono - rosca_interna(alto)
 
 
 def tuerca_mariposa():
@@ -230,7 +241,9 @@ def tuerca_mariposa():
         oreja = caja(6, 7, 1.6).translate([s * 6, 1.5, 0])
         oreja += cilindro(3.0, 1.6, "z").translate([s * 8.5, 3.5, 0])
         cuerpo += oreja
-    return cuerpo - cilindro(1.95, 8)
+    cuerpo = cuerpo.scale([1, DELGADEZ_TUERCA, 1])
+    alto = cuerpo.bounding_box()[4] - cuerpo.bounding_box()[1]
+    return cuerpo - rosca_interna(alto + 4).translate([0, (cuerpo.bounding_box()[4] + cuerpo.bounding_box()[1]) / 2, 0])
 
 
 # ---------------------------------------------------------------- pesas (balanza)
