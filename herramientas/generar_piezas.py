@@ -16,7 +16,7 @@ from pathlib import Path
 
 import numpy as np
 import trimesh
-from manifold3d import Manifold, set_circular_segments
+from manifold3d import Manifold, Mesh, set_circular_segments
 from PIL import Image
 
 set_circular_segments(48)
@@ -172,11 +172,51 @@ def maza(tam):
 
 
 # ---------------------------------------------------------------- tornillería
+PASO_ROSCA = 0.9     # mm (M4 real: 0.7; un poco más abierto para que se vea en pantalla)
+
+
+def rosca(largo, r_ext=1.95, r_int=1.5, por_vuelta=16):
+    """Vástago roscado a lo largo de Y, de y=0 a y=largo.
+    Una sola superficie helicoidal: raíces R_i y crestas C_i (media vuelta de paso más arriba); cada flanco
+    une una vuelta con la siguiente. Los extremos se cierran con un abanico al eje y se recortan después."""
+    N = por_vuelta
+    n = int((largo + 3 * PASO_ROSCA) / PASO_ROSCA * N) + 1
+    vert = []
+    for i in range(n):
+        a = 2 * math.pi * i / N
+        z = PASO_ROSCA * (i / N - 1.5)
+        c, s = math.cos(a), math.sin(a)
+        vert += [(r_int * c, r_int * s, z), (r_ext * c, r_ext * s, z + PASO_ROSCA / 2)]
+    R, C = (lambda i: 2 * i), (lambda i: 2 * i + 1)
+    caras = []
+    for i in range(n - 1):
+        caras += [(R(i), R(i + 1), C(i + 1)), (R(i), C(i + 1), C(i))]                  # flanco de abajo
+        if i + N + 1 < n:
+            caras += [(C(i), C(i + 1), R(i + 1 + N)), (C(i), R(i + 1 + N), R(i + N))]   # flanco de arriba
+    abajo, arriba = len(vert), len(vert) + 1
+    vert += [(0, 0, vert[R(0)][2] + PASO_ROSCA / 2), (0, 0, vert[C(n - 1)][2] - PASO_ROSCA / 2)]
+    borde_abajo = [R(i) for i in range(N + 1)] + [C(0)]
+    borde_arriba = [C(i) for i in range(n - 1 - N, n)] + [R(n - 1)]
+    caras += [(abajo, b, a) for a, b in zip(borde_abajo, borde_abajo[1:] + borde_abajo[:1])]
+    caras += [(arriba, a, b) for a, b in zip(borde_arriba, borde_arriba[1:] + borde_arriba[:1])]
+    malla = trimesh.Trimesh(vert, caras, process=False)
+    trimesh.repair.fix_winding(malla)
+    if malla.volume < 0:
+        malla.invert()
+    helice = Manifold(Mesh(vert_properties=np.asarray(malla.vertices, np.float32),
+                           tri_verts=np.asarray(malla.faces, np.uint32)))
+    recorte = Manifold.cylinder(0.6, r_int - 0.1, r_ext + 0.05, 0, False)        # punta achaflanada
+    recorte += Manifold.cylinder(largo - 0.6, r_ext + 0.05, r_ext + 0.05, 0, False).translate([0, 0, 0.6])
+    return (helice ^ recorte).rotate([-90, 0, 0])
+
+
 def tornillo(largo):
-    cabeza = disco(3.6, 2.6, 0.7).translate([0, largo, 0])
-    ranura = caja(7.5, 1.2, 0.9).translate([0, largo + 2.3, 0])
-    vastago = cilindro(1.95, largo).translate([0, largo / 2, 0])
-    return (cabeza - ranura) + vastago
+    """Tornillo de cabeza redonda con ranura en cruz (estrella / Phillips) y rosca."""
+    cabeza = disco(3.6, 2.6, 0.9).translate([0, largo, 0])
+    cruz = caja(4.4, 2.2, 1.15) + caja(1.15, 2.2, 4.4)                    # ranuras de la estrella
+    cruz += Manifold.cylinder(1.6, 0.2, 1.4, 0, False).rotate([-90, 0, 0]).translate([0, -1.6, 0])  # centro cónico
+    cruz = cruz.translate([0, largo + 2.6, 0])
+    return (cabeza - cruz) + rosca(largo + 0.3)
 
 
 def tuerca():
@@ -254,7 +294,8 @@ def caras_interiores(malla_mm):
     if not len(rayo):
         return interior
     distancia = np.linalg.norm(puntos - origenes[rayo], axis=1)
-    interior[rayo[distancia < AGUJERO + 0.6]] = True
+    # por debajo de 1 mm son los flancos de una rosca, no un agujero
+    interior[rayo[(distancia > 1.0) & (distancia < AGUJERO + 0.6)]] = True
     return interior
 
 
@@ -279,7 +320,9 @@ def a_trimesh(m, color, agujeros=True):
     for caras, oscuro in ((~interior, False), (interior, True)):
         if not caras.any():
             continue
-        capa = mm.submesh([np.nonzero(caras)[0]], append=True).smooth_shaded
+        capa = mm.submesh([np.nonzero(caras)[0]], append=True)
+        # el metal (roscas) se suaviza con un ángulo mayor: menos vértices partidos y un archivo mucho más liviano
+        capa = trimesh.graph.smooth_shade(capa, angle=np.radians(75)) if color == "metal" else capa.smooth_shaded
         uv = uv_triplanar(capa.vertices, capa.vertex_normals)
         capa = trimesh.Trimesh(capa.vertices / 1000.0, capa.faces, vertex_normals=capa.vertex_normals, process=False)
         capa.visual = trimesh.visual.TextureVisuals(uv=uv, material=material(color, oscuro))
