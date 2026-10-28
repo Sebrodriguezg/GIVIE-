@@ -47,7 +47,8 @@ async function poblar() {
   const cat = (await catalogo()).filter(p => p.categoria !== 'accesorios');
   const ids = conjunto.ids ?? cat.map(p => p.id);
   const paginas = document.documentElement.scrollHeight / altoFijo;
-  const total = Math.round(Math.min(celular ? 40 : 72, 10 + paginas * PARALAJE * (celular ? 7.5 : 13)));
+  const ancho = celular ? 1 : THREE.MathUtils.clamp(innerWidth / altoFijo / 1.4, 1, 1.6); // más área, más piezas
+  const total = Math.round(Math.min(celular ? 40 : 72 * ancho, (10 + paginas * PARALAJE * (celular ? 7.5 : 13)) * ancho));
   const recorrido = (paginas - 1) * ALTO_VISTA * PARALAJE;
 
   const tareas = [];
@@ -62,11 +63,15 @@ async function poblar() {
       const escala = azar(1.0, 1.9) / Math.max(tam.x, tam.y, tam.z);
       pivote.scale.setScalar(escala);
       // repartidas a lo largo de toda la página, alternando lados para no tapar el centro
+      // en pantallas anchas llegan hasta los bordes: el ancho visible depende de la profundidad z
       const lado = i % 2 ? 1 : -1;
+      const z = azar(-5, 1);
+      const medioAncho = (camara.position.z - z) * Math.tan(THREE.MathUtils.degToRad(20)) * innerWidth / altoFijo;
+      const x = celular ? azar(0.9, 2.4) : azar(Math.max(2.2, medioAncho * 0.3), medioAncho * 0.95);
       const destino = new THREE.Vector3(
-        lado * (celular ? azar(0.9, 2.4) : azar(2.4, 4.6)),
+        lado * x,
         ALTO_VISTA / 2 - (i + Math.random()) / total * (recorrido + ALTO_VISTA),
-        azar(-5, 1),
+        z,
       );
       pivote.userData = {
         id, destino,

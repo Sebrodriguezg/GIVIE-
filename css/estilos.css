@@ -406,3 +406,17 @@ main, .pie { position: relative; z-index: 1; }
 .contacto dt { font-weight: 900; font-size: .8rem; letter-spacing: .08em; text-transform: uppercase; color: var(--rojo); padding-top: 3px; }
 .contacto dd { margin: 0; }
 @media (max-width: 560px) { .contacto { grid-template-columns: 1fr; } .contacto dd { margin-bottom: 6px; } }
+
+/* givie */
+.miembros { display: grid; gap: 24px; margin-top: 24px; }
+.miembro { display: grid; grid-template-columns: 150px 1fr; gap: 20px; align-items: start; }
+.miembro img { width: 150px; aspect-ratio: 1; object-fit: cover; border-radius: 50%; border: 5px solid var(--amarillo); box-shadow: 4px 4px 0 var(--morado); }
+.miembro:nth-child(3n+2) img { border-color: var(--rojo); }
+.miembro:nth-child(3n) img { border-color: var(--azul); }
+.miembro h3 { margin: 0; font-size: 1.35rem; color: var(--morado); }
+.miembro-rol { margin: 0 0 6px; font-family: var(--mano); font-size: 1.2rem; color: var(--rojo); }
+.miembro p { margin-top: 0; }
+@media (max-width: 560px) {
+  .miembro { grid-template-columns: 1fr; justify-items: center; text-align: center; }
+  .miembro img { width: 130px; }
+}
