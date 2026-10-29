@@ -698,7 +698,7 @@ P7 & Banda sobre dos poleas, par creciente & patina al llegar a $\tau_{\max}$ (e
 P8 & Apretar la tuerca de dos vigas en movimiento & se conserva el momento angular total & 1\,\%\\
 P9 & Tornillo sin tuerca, eje vertical, pieza invertida & el tornillo se cae por gravedad & cualitativa\\
 P10 & Identidades de PGA: $M\widetilde M = 1$, $\exp(\log M) = M$, composición, sándwich de puntos y rectas & exactas & $10^{-12}$\\
-P11 & Cuerpo libre sin gravedad, con giro inicial & recta del momento fija; energía constante & $10^{-6}$\\
+P11 & Cuerpo libre sin gravedad, con giro inicial, 10\,s & recta del momento fija; energía constante & 0,1\,\%\\
 P12 & Grados de libertad: balanza, biela-manivela, montaje trabado & 1, 1 y 0 & exacto\\
 P13 & Balanza por trabajo virtual y por simulación & mismo equilibrio & 1\,\%\\
 P14 & Lagrangiano reducido frente a simulación completa (biela-manivela) & misma $q(t)$ & 2\,\%\\
@@ -813,6 +813,8 @@ Parámetros físicos inventados & Calibración con el kit (sección~\ref{sec:cal
   CRC Press, 1994.
 \bibitem{lynch-park} K.~M.~Lynch y F.~C.~Park, \emph{Modern Robotics: Mechanics, Planning, and Control},
   Cambridge University Press, 2017. Cap.~2 (grados de libertad, Grübler) y cap.~3 (tornillos).
+\bibitem{mirtich} B.~Mirtich, «Fast and accurate computation of polyhedral mass properties», \emph{Journal of
+  Graphics Tools} 1(2) (1996) 31--50.
 \bibitem{featherstone} R.~Featherstone, \emph{Rigid Body Dynamics Algorithms}, Springer, 2008.
 
 \item[] \textbf{Mecánica analítica}
@@ -841,10 +843,18 @@ Parámetros físicos inventados & Calibración con el kit (sección~\ref{sec:cal
 \bibitem{vandenbergen} G.~van den Bergen, \emph{Collision Detection in Interactive 3D Environments}, Morgan
   Kaufmann, 2003.
 
-\item[] \textbf{Contacto, fricción y materiales}
+\item[] \textbf{Contacto, fricción, materiales y transmisiones}
+\bibitem{shigley} R.~G.~Budynas y J.~K.~Nisbett, \emph{Shigley's Mechanical Engineering Design}, 10.ª ed.,
+  McGraw-Hill, 2015. Cap.~17: transmisiones por banda.
+\bibitem{meriam} J.~L.~Meriam y L.~G.~Kraige, \emph{Engineering Mechanics: Statics}, Wiley. Fricción en bandas.
 \bibitem{johnson} K.~L.~Johnson, \emph{Contact Mechanics}, Cambridge University Press, 1985. Rodadura con
   deslizamiento y pivoteo.
 \bibitem{treloar} L.~R.~G.~Treloar, \emph{The Physics of Rubber Elasticity}, 3.ª ed., Oxford, 1975.
+
+\item[] \textbf{Formatos y computación}
+\bibitem{gltf} Khronos Group, \emph{glTF 2.0 Specification}. \url{https://registry.khronos.org/glTF/}
+\bibitem{goldberg} D.~Goldberg, «What every computer scientist should know about floating-point arithmetic», \emph{ACM
+  Computing Surveys} 23(1) (1991) 5--48.
 \end{thebibliography}
 
 \end{document}

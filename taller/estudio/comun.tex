@@ -1,0 +1,46 @@
+% Preámbulo común de las fichas de estudio del Taller virtual ATA EPE.
+\usepackage[spanish,es-noshorthands,es-tabla]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[margin=2.2cm]{geometry}
+\usepackage[table]{xcolor}
+\usepackage{amsmath,amssymb,bm}
+\usepackage{tabularx,array,booktabs}
+\usepackage{enumitem}
+\usepackage{fontawesome5}
+\usepackage[most]{tcolorbox}
+\usepackage[hidelinks]{hyperref}
+\usepackage{listings}
+
+\definecolor{morado}{HTML}{2A1B7E}
+\definecolor{amarillo}{HTML}{FFCF2E}
+\definecolor{rojo}{HTML}{C4142C}
+\definecolor{verde}{HTML}{1F9D55}
+\definecolor{gris}{HTML}{5D5A73}
+
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\renewcommand{\arraystretch}{1.25}
+\setlist{itemsep=1pt,topsep=3pt}
+\numberwithin{equation}{section}
+\lstset{basicstyle=\ttfamily\small,columns=fullflexible,keepspaces=true,frame=single,rulecolor=\color{gris!40},
+  literate={á}{{\'a}}1 {é}{{\'e}}1 {í}{{\'i}}1 {ó}{{\'o}}1 {ú}{{\'u}}1 {ñ}{{\~n}}1 {Ω}{{$\Omega$}}1
+    {θ}{{$\theta$}}1 {λ}{{$\lambda$}}1 {Δ}{{$\Delta$}}1 {μ}{{$\mu$}}1 {·}{{$\cdot$}}1 {←}{{$\leftarrow$}}1 {§}{{\S}}1 {→}{{$\to$}}1 {≠}{{$\neq$}}1 {É}{{\'E}}1 {Á}{{\'A}}1 {∨}{{$\vee$}}1 {∧}{{$\wedge$}}1 {σ}{{$\sigma$}}1 {×}{{$\times$}}1 {≈}{{$\approx$}}1}
+
+\newcommand{\rev}[1]{\widetilde{#1}}
+\newcommand{\I}{\mathbf{I}}
+\newcommand{\vect}[1]{\bm{#1}}
+\newcommand{\A}{\mathcal{A}}
+
+\newtcolorbox{meta}{colback=morado,colframe=morado,coltext=white,arc=3mm}
+\newtcolorbox{lectura}{colback=morado!5,colframe=morado,fonttitle=\bfseries,title={\faBook~Lecturas}}
+\newtcolorbox{ejercicio}[1]{colback=amarillo!10,colframe=amarillo!80!black,fonttitle=\bfseries,title={\faPencil*~Ejercicio #1}}
+\newtcolorbox{control}{colback=rojo!5,colframe=rojo,fonttitle=\bfseries,title={\faQuestionCircle~Preguntas de control}}
+\newtcolorbox{codigo}[1][De la ecuación al código]{colback=verde!6,colframe=verde,fonttitle=\bfseries,title={\faCode~#1}}
+\newtcolorbox{cierre}{colback=verde!6,colframe=verde,fonttitle=\bfseries,title={\faFlagCheckered~Cierre del módulo}}
+\newtcolorbox{nota}[1]{colback=amarillo!12,colframe=amarillo!80!black,fonttitle=\bfseries,title={\faLightbulb~#1}}
+
+% \cabecera{número}{título}{subtítulo}
+\newcommand{\cabecera}[3]{%
+  \title{\textcolor{morado}{\textbf{Ficha #1. #2}}\\[3pt]\large Taller virtual ATA EPE · #3}
+  \author{}\date{}}

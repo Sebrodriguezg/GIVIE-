@@ -1,0 +1,165 @@
+% Ficha de estudio 3 del Taller virtual ATA EPE: mecánica analítica I (ligaduras y grados de libertad).
+\documentclass[11pt,a4paper]{article}
+\input{comun}
+\cabecera{3}{Ligaduras, grados de libertad y ejes}{Módulo 3: mecánica analítica I}
+
+\begin{document}
+\maketitle
+\vspace{-2.5em}
+
+\begin{meta}
+\textbf{\textcolor{amarillo}{Meta del módulo.}} Describir un montaje como un sistema con ligaduras, distinguir las
+holónomas de las que no lo son, y calcular cuántos grados de libertad tiene y cuáles son: qué movimientos permite y
+alrededor de qué ejes. Cara pública: el \textbf{contador de grados de libertad} y el dibujo de los ejes posibles.
+\end{meta}
+
+\begin{lectura}
+\begin{enumerate}[leftmargin=*]
+  \item \textbf{Lanczos, \emph{The Variational Principles of Mechanics}, caps.~I y II}: coordenadas generalizadas,
+        ligaduras, desplazamientos virtuales. Es la lectura más formativa del curso.
+  \item \textbf{Goldstein, cap.~1} (§1.3--1.4) y \textbf{cap.~2} (§2.4): ligaduras, principio de d'Alembert,
+        multiplicadores de Lagrange.
+  \item \textbf{Lynch y Park, \emph{Modern Robotics}, cap.~2} (§2.1--2.3): espacio de configuración, fórmula de
+        Grübler, ligaduras de Pfaff y holonomía; y §7.1 (cadenas cerradas).
+  \item Murray, Li y Sastry, cap.~2 §2.5 y cap.~6: velocidades de cadenas como tornillos.
+  \item Ball, \emph{Theory of Screws}, cap.~3: tornillos recíprocos (la base de §4 de esta ficha).
+\end{enumerate}
+\end{lectura}
+
+% =================================================================================================
+\section{Configuración y ligaduras}
+
+Un montaje de $N$ cuerpos libres tiene configuración $(M_1,\dots,M_N)\in SE(3)^N$: $6N$ grados de libertad. Las
+uniones restringen esa libertad.
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Holónomas}: relaciones entre posiciones, $\vect C(\vect q, t) = \vect 0$. Reducen la dimensión del
+        espacio de configuración. Ejemplos: una bisagra; dos ruedas en contacto con ejes fijos
+        ($R_A\varphi_A + R_B\varphi_B = $ cte).
+  \item \textbf{No holónomas}: relaciones entre velocidades que no son derivadas de ninguna relación entre
+        posiciones, $\mathbf A(\vect q)\,\dot{\vect q} = \vect 0$ (forma de Pfaff), no integrable. Ejemplo: una rueda
+        que rueda sin deslizar sobre la mesa y puede girar de rumbo: llega a cualquier posición, aunque en cada instante
+        solo puede moverse hacia adelante.
+\end{itemize}
+
+\begin{ejercicio}{3.1}
+Para la rueda que rueda sobre el plano (coordenadas $x, y$, rumbo $\phi$, giro $\theta$, radio $R$), escribe las dos
+ligaduras de rodadura en forma de Pfaff. Muestra que no son integrables (usa el teorema de Frobenius o construye una
+maniobra que cambie $x$ sin cambiar $y$, $\phi$ ni $\theta$ al final).
+\end{ejercicio}
+
+% =================================================================================================
+\section{Desplazamientos virtuales y multiplicadores}
+
+Un desplazamiento virtual $\delta\vect q$ es compatible con las ligaduras en un instante congelado:
+$\mathbf J\,\delta\vect q = 0$, con $\mathbf J = \partial\vect C/\partial\vect q$. El principio de d'Alembert dice que
+las fuerzas de ligadura no hacen trabajo virtual. De ahí, las ecuaciones de Lagrange con multiplicadores:
+\begin{equation}
+  \frac{d}{dt}\frac{\partial\mathcal L}{\partial\dot{\vect q}} - \frac{\partial\mathcal L}{\partial\vect q}
+  = \vect Q + \mathbf J^{\mathsf T}\vect\lambda,\qquad \vect C(\vect q) = \vect 0 .
+\end{equation}
+Los multiplicadores $\vect\lambda$ son, literalmente, las fuerzas que hacen las uniones: en el módulo 4 el núcleo
+los calcula para mantener las ligaduras, y en el 7 se muestran.
+
+% =================================================================================================
+\section{Contar grados de libertad}
+
+\subsection{Grübler--Kutzbach}
+Para $n$ eslabones (incluido el fijo) y $j$ uniones con $f_i$ grados de libertad cada una:
+\begin{equation}
+  \text{GDL} = 6\,(n - 1 - j) + \sum_{i=1}^{j} f_i\quad\text{(espacio)},\qquad
+  \text{GDL} = 3\,(n - 1 - j) + \sum_{i=1}^{j} f_i\quad\text{(plano)}.
+\end{equation}
+
+\begin{ejercicio}{3.2}
+Aplica las dos fórmulas a los prototipos de la cartilla: la balanza, la biela-manivela (cuatro eslabones), el
+pantógrafo y el sistema de dos ruedas. Para el cuadrilátero articulado, la fórmula espacial da $-2$ y la plana da
+$1$. ¿Cuál es correcta y por qué falla la otra?
+\end{ejercicio}
+
+\subsection{El rango del jacobiano}
+La fórmula de Grübler supone que las ligaduras son independientes. Cuando la geometría es especial (ejes paralelos,
+como en todo el kit), hay ligaduras redundantes y la fórmula se equivoca. Lo correcto es
+\begin{equation}
+  \text{GDL} = 6N - \operatorname{rango}\mathbf J,
+\end{equation}
+calculado numéricamente. Los movimientos admisibles son el núcleo de $\mathbf J$; cada vector del núcleo da un
+bivector por cuerpo: el eje alrededor del cual se mueve cada pieza en ese modo.
+
+% =================================================================================================
+\section{Ligaduras como tornillos (en PGA)}
+
+En PGA, la velocidad relativa que permite una unión es un subespacio de bivectores:
+
+\begin{tabularx}{\linewidth}{@{}l l Y@{}}
+\toprule
+\textbf{Unión} & \textbf{Velocidades relativas permitidas} & \textbf{Ligaduras}\\
+\midrule
+Revolución, eje $L$ & $\{\lambda L\}$ & 5\\
+Cilíndrica (tornillo sin tuerca) & $\{\lambda L + \mu\,\I L\}$ & 4\\
+Tornillo con paso $h$ (tuerca enroscándose) & $\{\lambda(L + h\,\I L)\}$ & 5\\
+Fija (tuerca apretada) & $\{0\}$ & 6\\
+\bottomrule
+\end{tabularx}
+
+\medskip
+Las fuerzas que hace una unión son las que \emph{no hacen trabajo} con los movimientos que permite: los forques $W$ con
+potencia virtual nula, $W\vee\Omega = 0$, para toda $\Omega$ permitida. En el lenguaje de Ball son los
+\textbf{tornillos recíprocos}. Así, cada unión da sus filas de $\mathbf J$ de forma directa: una base del espacio
+recíproco.
+
+\subsection{Cadenas cerradas}
+En un lazo cerrado (cuadrilátero, biela-manivela), recorrer el lazo y volver al punto de partida exige que la suma de
+las velocidades de las uniones, todas en el marco del espacio, sea nula:
+\begin{equation}
+  \sum_{i=1}^{j}\dot q_i\,S_i = 0,\qquad\Longrightarrow\qquad \text{GDL} = j - \operatorname{rango}[\,S_1\ \cdots\ S_j\,].
+\end{equation}
+
+\begin{ejercicio}{3.3}
+En el cuadrilátero plano, los cuatro ejes $S_i$ son rectas paralelas a $z$. Muestra que generan un espacio de dimensión
+3 (no 4 ni 6) y que, por tanto, $\text{GDL} = 4 - 3 = 1$. Esta es la explicación de la «paradoja» del ejercicio 3.2.
+\end{ejercicio}
+
+% =================================================================================================
+\section{Discretización: álgebra lineal propia}
+
+\begin{codigo}
+\begin{lstlisting}
+rango(J, tolerancia):
+    valores ← valoresPropios(J^T J)        # Jacobi: matriz simétrica 6N×6N
+    σ ← raíz de cada valor
+    devolver cuántos σ > tolerancia · σ_max · tamaño
+nucleo(J): vectores propios de J^T J con σ ≈ 0
+\end{lstlisting}
+El umbral relativo es necesario: con redondeo, «cero» nunca es cero. Para montajes grandes, $\mathbf J^{\mathsf T}\mathbf J$
+pierde precisión (eleva al cuadrado el número de condición); si hace falta, se cambia a una descomposición QR con
+pivoteo.
+\end{codigo}
+
+\begin{codigo}[Qué programar]
+\begin{tabularx}{\linewidth}{@{}l Y@{}}
+\texttt{nucleo/lineal.js} & Matrices densas: producto, transpuesta, Jacobi para matrices simétricas, rango, núcleo.\\
+\texttt{nucleo/tornillos.js} & Base de bivectores, potencia virtual $W\vee\Omega$, complemento recíproco de un
+  subespacio.\\
+\texttt{analisis/gdl.js} & Jacobiano del montaje a partir de sus uniones; grados de libertad; modos (ejes por
+  cuerpo); comparación con Grübler para avisar de redundancias.\\
+\texttt{app/} & Indicador «este montaje tiene $n$ grados de libertad» y dibujo de los ejes de cada modo.\\
+\end{tabularx}
+\end{codigo}
+
+\begin{control}
+\begin{enumerate}[leftmargin=*]
+  \item ¿Qué diferencia una ligadura holónoma de una no holónoma? Da un ejemplo del kit de cada una.
+  \item ¿Por qué las fuerzas de ligadura no hacen trabajo virtual?
+  \item ¿Qué representan los multiplicadores de Lagrange?
+  \item ¿Por qué falla la fórmula de Grübler en los mecanismos del kit?
+  \item ¿Qué es un tornillo recíproco y por qué describe las fuerzas de una unión?
+  \item ¿Por qué hace falta una tolerancia relativa para calcular el rango?
+\end{enumerate}
+\end{control}
+
+\begin{cierre}
+Ejercicios 3.1--3.3 · prueba P12 (balanza 1, biela-manivela 1, montaje trabado 0) y comparación con Grübler · cara
+pública: el contador de grados de libertad con los ejes dibujados.
+\end{cierre}
+
+\end{document}

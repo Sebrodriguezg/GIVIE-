@@ -1,0 +1,148 @@
+% Ficha de estudio 7 del Taller virtual ATA EPE: mecánica analítica II (lagrangiano reducido y trabajo virtual).
+\documentclass[11pt,a4paper]{article}
+\input{comun}
+\cabecera{7}{La ecuación del mecanismo}{Módulo 7: mecánica analítica II}
+
+\begin{document}
+\maketitle
+\vspace{-2.5em}
+
+\begin{meta}
+\textbf{\textcolor{amarillo}{Meta del módulo.}} Para cualquier mecanismo de un grado de libertad que se arme, obtener
+\emph{su} ecuación de movimiento en una sola coordenada, su inercia efectiva, su ventaja mecánica y las fuerzas que
+soporta cada unión; y comprobar que coincide con la simulación completa. Cara pública: \textbf{«Ver las cuentas»} del
+montaje armado.
+\end{meta}
+
+\begin{lectura}
+\begin{enumerate}[leftmargin=*]
+  \item \textbf{Lanczos, caps.~III--V}: principio de los trabajos virtuales, d'Alembert, ecuaciones de Lagrange y de
+        Hamilton.
+  \item \textbf{Goldstein, cap.~2} (§2.1--2.6) y \textbf{cap.~8} (§8.1--8.2): principio de Hamilton y hamiltoniano.
+  \item \textbf{Marsden y West, «Discrete mechanics and variational integrators» (2001)}, §1--2: discretizar la
+        acción en lugar de la ecuación.
+  \item Arnold, \emph{Mathematical Methods of Classical Mechanics}, caps.~3--4: la mirada geométrica.
+  \item Doran y Lasenby, cap.~12: lagrangianos con multivectores (opcional, para la versión en álgebra geométrica).
+\end{enumerate}
+\end{lectura}
+
+% =================================================================================================
+\section{Del montaje a una coordenada}
+
+En el módulo 3, el núcleo de $\mathbf J$ dio los movimientos admisibles. En un mecanismo de un grado de libertad es
+una sola dirección: para cada cuerpo $i$, su velocidad es proporcional a la de la coordenada elegida $q$ (el ángulo de
+la manivela):
+\begin{equation}
+  \Omega_i = \xi_i(q)\,\dot q .
+\end{equation}
+Los bivectores $\xi_i(q)$ son los \emph{coeficientes cinemáticos}: dicen cómo se mueve cada pieza cuando la manivela
+gira un poco. Se calculan normalizando el vector del núcleo para que la componente de la manivela sea 1.
+
+% =================================================================================================
+\section{El lagrangiano reducido}
+
+Con (1.1), la energía cinética de todo el mecanismo es una forma cuadrática en $\dot q$:
+\begin{equation}
+  T = \tfrac12\,\mathcal M(q)\,\dot q^{\,2},\qquad \mathcal M(q) = \sum_i \xi_i(q)\vee\A_i[\xi_i(q)],\qquad
+  V(q) = \sum_i m_i\,g\,y_i(q),
+\end{equation}
+y la ecuación de Euler–Lagrange con $\mathcal L = T - V$ da
+\begin{equation}
+  \mathcal M(q)\,\ddot q + \tfrac12\,\mathcal M'(q)\,\dot q^{\,2} + V'(q) = Q .
+\end{equation}
+$\mathcal M(q)$ es la \textbf{inercia efectiva}: lo que «siente» la mano al girar la manivela. El término con
+$\mathcal M'$ hace que el mecanismo acelere o frene solo, aunque no haya fuerzas, cuando su inercia cambia con la
+posición.
+
+\begin{ejercicio}{7.1}
+Deduce (2.2) desde (2.1). Para la biela-manivela de la cartilla, calcula $\mathcal M(q)$ a mano con piezas como
+varillas delgadas y dibújala para $q\in[0, 2\pi]$. ¿Dónde es máxima?
+\end{ejercicio}
+
+\subsection{Fuerzas generalizadas}
+Un forque $F$ (fuerza o par) aplicado al cuerpo $i$ aporta a $Q$ su potencia por unidad de $\dot q$:
+\begin{equation}
+  Q = \sum_k F_k\vee\xi_{i(k)}(q).
+\end{equation}
+El par de la mano en la manivela entra con coeficiente 1; la gravedad ya está en $V$; la fricción de las uniones,
+como forques opuestos al giro relativo.
+
+% =================================================================================================
+\section{Trabajo virtual}
+
+En equilibrio estático, $\ddot q = \dot q = 0$ y (2.2) se reduce a $V'(q) = Q$: el \textbf{principio de los trabajos
+virtuales}. No hace falta conocer ninguna fuerza interna.
+\begin{itemize}[leftmargin=*]
+  \item La \textbf{balanza} equilibra cuando $m_1gx_1\,\delta\theta = m_2gx_2\,\delta\theta$, es decir, $m_1x_1 = m_2x_2$.
+  \item La \textbf{ventaja mecánica} de cualquier transmisión ideal es la razón de desplazamientos virtuales:
+        $\tau_{\text{sal}}/\tau_{\text{ent}} = \delta\theta_{\text{ent}}/\delta\theta_{\text{sal}}$, que en la
+        biela-manivela cambia con el ángulo.
+\end{itemize}
+
+\begin{ejercicio}{7.2}
+Calcula la ventaja mecánica de la biela-manivela en función de $q$ con los coeficientes cinemáticos. ¿Dónde es
+infinita (puntos muertos) y qué significa para quien gira la manivela?
+\end{ejercicio}
+
+% =================================================================================================
+\section{Las fuerzas en cada unión}
+
+Los impulsos que el solucionador del módulo 4 calcula para cada fila son $\vect P = h\vect\lambda$: dividiendo por el
+paso se obtienen los multiplicadores de Lagrange, que son las fuerzas de ligadura. En PGA, cada unión da un forque: su
+parte euclídea es la fuerza que soporta el tornillo, y su parte ideal el par. El simulador las dibuja como flechas
+proporcionales.
+
+% =================================================================================================
+\section{Hamilton y la conservación}
+
+Con $p = \mathcal M(q)\dot q$, el hamiltoniano es $H = p^2/(2\mathcal M(q)) + V(q)$. Si no hay fuerzas que disipen ni
+que dependan del tiempo, $H$ se conserva. Es la prueba más fina de que la simulación completa y la reducida dicen lo
+mismo.
+
+% =================================================================================================
+\section{Discretización: integrador variacional}
+
+En lugar de discretizar (2.2), se discretiza la acción $S = \int\mathcal L\,dt$ con un lagrangiano discreto
+\begin{equation}
+  L_d(q_k, q_{k+1}) = h\,\mathcal L\!\left(\frac{q_k + q_{k+1}}{2},\ \frac{q_{k+1}-q_k}{h}\right),
+\end{equation}
+y se impone que $S_d = \sum_k L_d$ sea estacionaria. Sale la ecuación de Euler–Lagrange discreta
+\begin{equation}
+  D_2L_d(q_{k-1}, q_k) + D_1L_d(q_k, q_{k+1}) = 0,
+\end{equation}
+que se resuelve para $q_{k+1}$ con el método de Newton. El método es simpléctico y conserva una versión discreta del
+momento: la energía no deriva en tiempos largos.
+
+\begin{ejercicio}{7.3}
+Para $\mathcal L = \tfrac12\dot q^2 - V(q)$, muestra que (6.2) con la regla del trapecio en lugar del punto medio da el
+método de Störmer–Verlet. ¿Qué cambia cuando $\mathcal M$ depende de $q$?
+\end{ejercicio}
+
+\begin{codigo}[Qué programar]
+\begin{tabularx}{\linewidth}{@{}l Y@{}}
+\texttt{analisis/reducido.js} & Coeficientes cinemáticos $\xi_i(q)$ desde el núcleo de $\mathbf J$; $\mathcal M(q)$,
+  $\mathcal M'(q)$ por diferencias; $V(q)$; $Q$.\\
+\texttt{analisis/variacional.js} & Integrador variacional (6.1)--(6.2) con Newton.\\
+\texttt{analisis/trabajo\_virtual.js} & Equilibrio y ventaja mecánica.\\
+\texttt{app/cuentas.js} & «Ver las cuentas»: la ecuación del mecanismo, la gráfica de $\mathcal M(q)$ y de la
+  ventaja mecánica, las fuerzas en cada tornillo, la energía.\\
+\end{tabularx}
+\end{codigo}
+
+\begin{control}
+\begin{enumerate}[leftmargin=*]
+  \item ¿Qué son los coeficientes cinemáticos y de dónde salen?
+  \item ¿Por qué el mecanismo puede acelerar sin fuerza cuando $\mathcal M$ depende de $q$?
+  \item ¿Por qué el trabajo virtual no necesita las fuerzas internas?
+  \item ¿Qué son los puntos muertos de la biela-manivela?
+  \item ¿Qué relación hay entre los impulsos del solucionador y los multiplicadores de Lagrange?
+  \item ¿Qué ventaja tiene discretizar la acción en lugar de la ecuación?
+\end{enumerate}
+\end{control}
+
+\begin{cierre}
+Ejercicios 7.1--7.3 · pruebas P4 (balanza), P13 (trabajo virtual igual a simulación) y P14 (reducido igual a
+completo) · cara pública: «Ver las cuentas» del montaje armado.
+\end{cierre}
+
+\end{document}

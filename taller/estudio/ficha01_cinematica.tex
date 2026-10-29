@@ -1,0 +1,199 @@
+% Ficha de estudio 1 del Taller virtual ATA EPE: cinemática de cuerpos rígidos.
+\documentclass[11pt,a4paper]{article}
+\input{comun}
+\cabecera{1}{Movimientos rígidos, tornillos y velocidad}{Módulo 1: cinemática}
+
+\begin{document}
+\maketitle
+\vspace{-2.5em}
+
+\begin{meta}
+\textbf{\textcolor{amarillo}{Meta del módulo.}} Describir cualquier movimiento de una pieza como un tornillo,
+derivarlo en el tiempo para obtener velocidades, interpolar entre poses, llevar un agujero sobre otro y redondear una
+pose a la retícula del kit. Cara pública: \textbf{armar} — tomar piezas, moverlas, girarlas e imantarlas.
+\end{meta}
+
+\begin{lectura}
+\begin{enumerate}[leftmargin=*]
+  \item \textbf{Lynch y Park, \emph{Modern Robotics}, cap.~3} (§3.1--3.3): movimientos rígidos, coordenadas
+        exponenciales, \emph{twists} y tornillos. Es la versión matricial de lo que haremos en PGA: léelo en paralelo.
+  \item \textbf{Dorst y De Keninck, \emph{May the Forque Be with You}}, secciones de motores y de cinemática
+        (velocidad como bivector, marco del cuerpo y del espacio).
+  \item Murray, Li y Sastry, \emph{A Mathematical Introduction to Robotic Manipulation}, cap.~2 (§2.1--2.4): el
+        teorema de Chasles y la teoría de tornillos con rigor.
+  \item Selig, \emph{Geometric Fundamentals of Robotics}, caps.~4 y 7: el grupo $SE(3)$, su álgebra de Lie y los
+        tornillos; puente con el álgebra de Clifford.
+  \item Opcional e histórico: Ball, \emph{A Treatise on the Theory of Screws}, caps.~1--2.
+\end{enumerate}
+\end{lectura}
+
+% =================================================================================================
+\section{El grupo de los movimientos rígidos}
+
+Un movimiento rígido conserva distancias y orientación. Forman un grupo, $SE(3)$, de dimensión 6 (3 de giro y 3 de
+traslación). Hay varias maneras de representarlo:
+
+\begin{tabularx}{\linewidth}{@{}l c Y@{}}
+\toprule
+\textbf{Representación} & \textbf{Números} & \textbf{Comentario}\\
+\midrule
+Matriz homogénea $4\times4$ & 12 (16) & la de three.js; componer es multiplicar matrices\\
+Cuaternión y vector & 7 & común en motores físicos; dos objetos separados\\
+Cuaternión dual & 8 & un solo objeto; es el motor de PGA con otra notación\\
+Motor de PGA & 8 & un solo objeto que además actúa igual sobre planos, rectas y puntos\\
+\bottomrule
+\end{tabularx}
+
+\medskip
+El motor tiene 8 componentes (grados 0, 2 y 4) pero solo 6 grados de libertad: cumple $M\rev M = 1$, que son dos
+ecuaciones (la parte escalar y la de grado 4).
+
+\begin{ejercicio}{1.1}
+Escribe un motor general $M = a + b_{01}e_{01} + \dots + b_{23}e_{23} + c\,\I$ y desarrolla $M\rev M$. Identifica las
+dos ecuaciones de normalización. ¿Qué significa geométricamente la de grado 4?
+\end{ejercicio}
+
+% =================================================================================================
+\section{Chasles y el tornillo}
+
+Todo movimiento rígido es un \textbf{tornillo}: un giro de ángulo $\phi$ alrededor de una recta $L$ más un avance $s$ a
+lo largo de ella. Su \emph{paso} es $h = s/\phi$ (en el kit, el tornillo M4 real tiene $h = 0{,}7\,\mathrm{mm}/2\pi$).
+En PGA (ficha 0, §4.2):
+\begin{equation}
+  M = \exp\!\Bigl(-\tfrac12(\phi + s\,\I)\,L\Bigr).
+\end{equation}
+Dos casos límite: $h = 0$ es un giro puro (una bisagra); $h = \infty$ es una traslación pura (un riel).
+
+\begin{ejercicio}{1.2}
+Una tuerca enroscada que gira una vuelta completa avanza 0{,}7\,mm. Escribe su motor como exponencial de un único
+bivector. ¿Qué pasa con ese motor si la tuerca da diez vueltas? ¿Y media vuelta en sentido contrario?
+\end{ejercicio}
+
+% =================================================================================================
+\section{Velocidad: derivar un motor}
+
+Si una pieza tiene pose $M(t)$, derivar $M\rev M = 1$ muestra que $\dot M \rev M$ es un bivector. Se define la
+velocidad en dos marcos:
+\begin{equation}
+  \dot M = -\tfrac12\,\Omega_e\,M = -\tfrac12\,M\,\Omega_c, \qquad \Omega_e = M\,\Omega_c\,\rev M .
+\end{equation}
+$\Omega_c$ (marco del cuerpo) es la velocidad «vista desde la pieza»; $\Omega_e$ (marco del espacio) es la vista desde
+la mesa. La relación entre ambas es la \emph{adjunta}: el sándwich. Un punto $X$ de la pieza, en el mundo
+$X' = MX\rev M$, se mueve con
+\begin{equation}
+  \dot X' = X'\times\Omega_e \quad\text{(salvo el signo de la convención)},
+\end{equation}
+donde $\times$ es el conmutador. La recta de $\Omega_e$ es el eje instantáneo de tornillo.
+
+\begin{ejercicio}{1.3}
+Deriva $X' = M X \rev M$ usando (3.1) y llega a (3.2). Fija el signo con la convención de la ficha 0: un rotor de
+velocidad angular $+\omega$ alrededor de $+z$ debe mover el punto $(1,0,0)$ hacia $+y$.
+\end{ejercicio}
+
+\begin{ejercicio}{1.4}
+Para $\Omega = \omega\,e_{12} + v\,e_{01}$ (giro en $z$ más velocidad en $x$, con la convención de la ficha 0),
+encuentra el eje instantáneo y su paso. ¿Qué pasa cuando $\omega \to 0$?
+\end{ejercicio}
+
+% =================================================================================================
+\section{Interpolar poses}
+
+Para animar el imantado (la pieza «cae» suave a su lugar) se interpola entre dos poses $M_0$ y $M_1$ siguiendo el
+tornillo que las une:
+\begin{equation}
+  M(t) = \exp\!\bigl(t\,\log(M_1\rev M_0)\bigr)\,M_0,\qquad t\in[0,1].
+\end{equation}
+Es la generalización a $SE(3)$ de la interpolación esférica de cuaterniones (\emph{slerp}): velocidad constante a lo
+largo del tornillo, sin las deformaciones de interpolar matrices componente a componente.
+
+% =================================================================================================
+\section{Llevar un agujero sobre otro}
+
+Para dos rectas normalizadas $A$ y $B$ (dos ejes de agujeros), el motor más corto que lleva $A$ sobre $B$ es la raíz
+cuadrada del producto $BA^{-1} = -BA$:
+\begin{equation}
+  M_{A\to B} = \sqrt{-BA},\qquad \sqrt{N} = \frac{1 + N}{\lVert 1 + N\rVert}\quad\text{(si }N\neq-1\text{)}.
+\end{equation}
+
+\begin{ejercicio}{1.5}
+Verifica que $\sqrt N$ así definida cumple $(\sqrt N)^2 = N$ para un rotor $N = \cos\alpha + L\sin\alpha$. ¿Qué falla
+cuando $N = -1$? Muestra que $-BA = -1$ ocurre cuando $B$ es la misma recta que $A$ con la orientación opuesta (un
+agujero «al revés») y propone cómo resolver ese caso.
+\end{ejercicio}
+
+\begin{ejercicio}{1.6}
+Para alinear agujeros, el ángulo y la distancia entre dos rectas salen de $AB$ (plan, sección de PGA). Calcula $AB$ para
+dos rectas paralelas al eje $z$ que pasan por $(0,0)$ y $(d,0)$. ¿En qué parte de $AB$ aparece $d$?
+\end{ejercicio}
+
+% =================================================================================================
+\section{La retícula del kit}
+
+Las piezas del kit se arman en una retícula de 10\,mm con giros de $90^\circ$. Las orientaciones posibles son las 24
+rotaciones del cubo (el grupo octaédrico $O$). Imantar una pose $M$ es encontrar el elemento más cercano de
+\begin{equation}
+  \mathcal{G} = \{\,T_{\vect{n}}\,R_g \;:\; \vect{n}\in(1\,\mathrm{cm})\,\mathbb{Z}^3,\ g\in O\,\}.
+\end{equation}
+Se redondea por separado: primero el giro al elemento de $O$ más cercano (el de mayor $\lvert\langle R_g\rev R\rangle_0\rvert$),
+luego la traslación a la retícula. Pero las piezas no se imantan a la mesa sino \emph{entre sí}: lo natural es buscar
+el agujero más cercano de otra pieza y usar (5.1).
+
+\begin{ejercicio}{1.7}
+Construye las 24 rotaciones del cubo como rotores (pista: identidad; 9 giros de $90^\circ$, $180^\circ$ y
+$270^\circ$ en $x$, $y$, $z$; 6 giros de $180^\circ$ en diagonales de caras; 8 de $120^\circ$ y $240^\circ$ en
+diagonales del cubo). ¿Cuántos rotores distintos hay, si $R$ y $-R$ representan el mismo giro?
+\end{ejercicio}
+
+% =================================================================================================
+\section{Elegir con el dedo: el rayo como recta}
+
+El cursor en la pantalla define un rayo desde la cámara: en PGA es la recta $L = C\vee P$, con $C$ el centro de la
+cámara y $P$ el punto del cursor en el plano cercano. Elegir una pieza es encontrar la primera forma que corta $L$;
+arrastrarla sobre la mesa es seguir el punto $L\wedge p_{\text{mesa}}$, donde la recta corta el plano de la mesa.
+
+\begin{codigo}
+\begin{lstlisting}
+rayo(cámara, x_pantalla, y_pantalla):
+    C ← punto(centro de la cámara)
+    P ← punto(desproyectar(x, y) en el plano cercano)
+    devolver normalizar(vee(C, P))
+puntoSobreMesa(L):
+    devolver wedge(L, plano(0, 1, 0, 0))     # la mesa es y = 0
+\end{lstlisting}
+\end{codigo}
+
+% =================================================================================================
+\section{Puertos de las piezas}
+
+Cada agujero es una recta en el sistema de la pieza. Hoy \texttt{herramientas/generar\_piezas.py} conoce los
+agujeros pero no los exporta: hay que agregar al \texttt{catalogo.json} la lista de puertos de cada pieza (centro,
+dirección, diámetro y largo) y convertirlos en rectas al cargar.
+
+\begin{codigo}[Qué programar]
+\begin{tabularx}{\linewidth}{@{}l Y@{}}
+\texttt{nucleo/cinematica.js} & \texttt{velocidadDePunto}, \texttt{aEspacio}/\texttt{aCuerpo} (adjunta),
+  \texttt{interpolar}, \texttt{raiz}, \texttt{motorEntreRectas}, \texttt{anguloYDistancia}(A, B),
+  \texttt{rotacionesDelCubo}, \texttt{imantar}.\\
+\texttt{herramientas/generar\_piezas.py} & Exportar los puertos al catálogo.\\
+\texttt{kit/catalogo.js} & Cargar piezas con sus puertos como rectas.\\
+\texttt{app/} & Escena, rayo del cursor, mover, girar de a $90^\circ$, imantar con animación.\\
+\end{tabularx}
+\end{codigo}
+
+\begin{control}
+\begin{enumerate}[leftmargin=*]
+  \item ¿Por qué el motor tiene 8 números pero 6 grados de libertad?
+  \item ¿Qué diferencia hay entre $\Omega_c$ y $\Omega_e$, y cuándo conviene cada una?
+  \item ¿Qué es el eje instantáneo de tornillo y cómo se obtiene de $\Omega$?
+  \item ¿Por qué interpolar con (4.1) es mejor que interpolar matrices componente a componente?
+  \item ¿Por qué la raíz de un motor falla cuando $N = -1$, y cuándo ocurre al alinear dos agujeros?
+  \item ¿Por qué las orientaciones del kit forman un grupo de 24 elementos?
+\end{enumerate}
+\end{control}
+
+\begin{cierre}
+Ejercicios 1.1--1.7 · preguntas de control · pruebas del módulo (rectas, interpolación, raíz, imantado) · cara
+pública: armar la estructura de la balanza en menos de 2 minutos.
+\end{cierre}
+
+\end{document}

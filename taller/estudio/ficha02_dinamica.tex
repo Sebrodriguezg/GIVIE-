@@ -1,0 +1,175 @@
+% Ficha de estudio 2 del Taller virtual ATA EPE: dinámica del cuerpo rígido.
+\documentclass[11pt,a4paper]{article}
+\input{comun}
+\cabecera{2}{Masa, inercia y movimiento libre}{Módulo 2: dinámica del cuerpo rígido}
+
+\begin{document}
+\maketitle
+\vspace{-2.5em}
+
+\begin{meta}
+\textbf{\textcolor{amarillo}{Meta del módulo.}} Calcular masa, centro de masa e inercia de cada pieza a partir de su
+malla; escribir y resolver las ecuaciones de Newton–Euler en PGA; avanzar en el tiempo sin salirse del grupo de
+movimientos rígidos, y entender qué integrador conserva qué. Cara pública: \textbf{laboratorio de giro} — lanzar una
+pieza y ver su movimiento libre, incluido el efecto Dzhanibekov.
+\end{meta}
+
+\begin{lectura}
+\begin{enumerate}[leftmargin=*]
+  \item \textbf{Goldstein, Poole y Safko, \emph{Classical Mechanics}, cap.~5} (§5.1--5.7): tensor de inercia, ejes
+        principales, ecuaciones de Euler, cuerpo libre.
+  \item \textbf{Dorst y De Keninck, \emph{May the Forque Be with You}}, secciones de dinámica: la aplicación de
+        inercia, el forque y la ecuación de movimiento en el marco del cuerpo.
+  \item \textbf{Hairer, Lubich y Wanner, \emph{Geometric Numerical Integration}}, caps.~I y VI (§VI.1--VI.3):
+        métodos simplécticos, por qué conservan la energía a largo plazo; y §IV.8 (métodos en grupos de Lie).
+  \item Landau y Lifshitz, \emph{Mecánica}, §32--37: el trompo, Poinsot y la estabilidad de los ejes.
+  \item Gunn, tesis doctoral, cap.~9: la misma dinámica en PGA, con más rigor geométrico.
+  \item Mirtich, «Fast and accurate computation of polyhedral mass properties», \emph{Journal of Graphics Tools}
+        1(2), 1996: masa e inercia de mallas.
+\end{enumerate}
+\end{lectura}
+
+% =================================================================================================
+\section{Propiedades de masa de una malla}
+
+Una pieza es un sólido cerrado, cuya frontera es una malla de triángulos orientados hacia afuera. Cada triángulo
+$(\vect a,\vect b,\vect c)$ forma con el origen un tetraedro con volumen con signo y matriz de covarianza
+\begin{equation}
+  V_t = \tfrac16\,\vect a\cdot(\vect b\times\vect c),\qquad
+  \mathbf{C}_t = \det(\mathbf{A})\,\mathbf{A}\,\mathbf{C}_0\,\mathbf{A}^{\mathsf T},\qquad
+  \mathbf{C}_0 = \tfrac{1}{120}\begin{pmatrix}2&1&1\\1&2&1\\1&1&2\end{pmatrix},
+\end{equation}
+con $\mathbf A = [\vect a\ \vect b\ \vect c]$ (columnas). Por el teorema de la divergencia, las partes que quedan
+fuera del sólido se cancelan, y sumando sobre todos los triángulos:
+\begin{equation}
+  m = \rho\sum_t V_t,\qquad \vect c = \frac{\rho}{m}\sum_t V_t\,\frac{\vect a+\vect b+\vect c}{4},\qquad
+  \mathbf C = \rho\sum_t \mathbf C_t - m\,\vect c\,\vect c^{\mathsf T},\qquad \mathbf I = \operatorname{tr}(\mathbf C)\,\mathbb 1 - \mathbf C.
+\end{equation}
+La última relación pasa de la covarianza (segundos momentos) al tensor de inercia respecto al centro de masa.
+
+\begin{ejercicio}{2.1}
+Aplica (1.1)--(1.2) a un cubo de lado 1 (12 triángulos) y verifica $I = m/6$ en los tres ejes. Luego a un cilindro
+aproximado con 24 lados: ¿cuánto se aleja de $\tfrac12 mR^2$?
+\end{ejercicio}
+
+\subsection{Ejes principales}
+$\mathbf I$ es simétrica: tiene una base ortonormal de vectores propios (ejes principales) con momentos
+$I_1\le I_2\le I_3$. Se diagonaliza con el método de Jacobi (rotaciones de Givens que anulan un elemento fuera de la
+diagonal por vez). En el marco principal, la inercia es diagonal y las ecuaciones se simplifican; el motor de la
+pieza absorbe la rotación entre su marco de modelado y el principal.
+
+% =================================================================================================
+\section{Newton–Euler y su forma en PGA}
+
+En el marco del cuerpo, con origen en el centro de masa y ejes principales:
+\begin{align}
+  m\,(\dot{\vect v} + \vect\omega\times\vect v) &= \vect f,\\
+  \mathbf I\,\dot{\vect\omega} + \vect\omega\times\mathbf I\vect\omega &= \vect\tau .
+\end{align}
+En PGA, velocidad y fuerza son bivectores ($\Omega$, $F$) y la inercia es una aplicación lineal $\A$ de velocidades en
+momentos. Las dos ecuaciones son una sola:
+\begin{equation}
+  \dot\Omega = \A^{-1}\bigl[\,F - \Omega\times\A[\Omega]\,\bigr].
+\end{equation}
+
+\begin{ejercicio}{2.2}
+Con la definición de $\A$ de Dorst y De Keninck, escribe $\Omega = \omega_1e_{23}+\omega_2e_{31}+\omega_3e_{12}
++ v_1e_{01}+v_2e_{02}+v_3e_{03}$ (ajusta los signos a la convención de la ficha 0) y muestra que (2.3) contiene
+exactamente a (2.1) y (2.2). ¿Dónde aparece $\vect\omega\times\vect v$?
+\end{ejercicio}
+
+\subsection{Fuerzas como rectas}
+Una fuerza $\vect f$ aplicada en el punto $P$ es la recta que pasa por $P$ con dirección $\vect f$, escalada por
+$\lvert\vect f\rvert$. Varias fuerzas se suman como bivectores; el resultado, en general, no es una recta sino un
+tornillo de fuerza (\emph{wrench}): una fuerza más un par a lo largo de ella. La gravedad sobre una pieza es la recta
+vertical por su centro de masa, de magnitud $mg$. Para usarla en (2.3), se lleva al marco del cuerpo:
+$F_c = \rev M\,F_e\,M$.
+
+\begin{ejercicio}{2.3}
+Escribe la fuerza de gravedad sobre una pieza con centro de masa en $(x, y, z)$ como bivector. Muestra que su parte
+euclídea es la fuerza y su parte ideal, el par respecto al origen.
+\end{ejercicio}
+
+% =================================================================================================
+\section{El cuerpo libre}
+
+Sin fuerzas, se conservan la energía $T = \tfrac12\,\Omega\vee\A[\Omega]$ y el momento (la recta $\A[\Omega]$ llevada
+al espacio). El movimiento de rotación se ve en la construcción de Poinsot: el vector $\vect L$ fijo, el elipsoide de
+energía rodando sobre un plano.
+
+\subsection{El teorema del eje intermedio}
+Linealizando (2.2) alrededor de un giro en el eje $k$ se obtiene, para las perturbaciones en los otros dos ejes $i,j$,
+\begin{equation}
+  \ddot\varepsilon = \omega_k^2\,\frac{(I_k - I_i)(I_j - I_k)}{I_iI_j}\,\varepsilon .
+\end{equation}
+Si $I_k$ es el intermedio, el factor es positivo y la perturbación crece: el giro es inestable. Es el «efecto
+Dzhanibekov», y una viga del kit lo muestra (tiene tres momentos distintos).
+
+\begin{ejercicio}{2.4}
+Deduce (3.1) desde las ecuaciones de Euler. Calcula los momentos principales de la viga de 5 y estima cuánto tarda en
+voltearse si se lanza girando a 3 vueltas por segundo con una perturbación de $1^\circ$.
+\end{ejercicio}
+
+% =================================================================================================
+\section{Discretización: avanzar sin salir del grupo}
+
+\subsection{El oscilador como banco de pruebas}
+Para $\ddot x = -\omega^2x$ con paso $h$, cada método multiplica el estado $(x, v)$ por una matriz de amplificación:
+\begin{align}
+  \text{Euler explícito:}&\quad \begin{pmatrix}1 & h\\ -\omega^2h & 1\end{pmatrix},\quad \det = 1 + \omega^2h^2 > 1
+    \ \text{(la energía crece)},\\
+  \text{Euler semiimplícito:}&\quad \begin{pmatrix}1-\omega^2h^2 & h\\ -\omega^2h & 1\end{pmatrix},\quad \det = 1
+    \ \text{(simpléctico; estable si } \omega h < 2).
+\end{align}
+El semiimplícito (primero la velocidad, luego la posición con la velocidad nueva) es simpléctico: no conserva la
+energía exacta, sino una «energía modificada» cercana, y por eso no deriva en tiempos largos.
+
+\begin{ejercicio}{2.5}
+Verifica (4.1) y (4.2). Calcula los valores propios de (4.2) y muestra que tienen módulo 1 si $\omega h < 2$. ¿Qué pasa
+con RK4: es estable?, ¿conserva la energía?
+\end{ejercicio}
+
+\subsection{El paso en el grupo}
+La posición no es un vector sino un motor. El paso semiimplícito queda:
+\begin{align}
+  \Omega_{k+1} &= \Omega_k + h\,\A^{-1}\bigl[F_k - \Omega_k\times\A[\Omega_k]\bigr],\\
+  M_{k+1} &= M_k\,\exp\!\bigl(-\tfrac h2\,\Omega_{k+1}\bigr).
+\end{align}
+Como la exponencial de un bivector es siempre un motor, $M$ nunca deja de ser un movimiento rígido: no hace falta
+reortogonalizar matrices. Solo se renormaliza de vez en cuando por redondeo (ficha 0, §5.3).
+
+\begin{nota}{El término giroscópico}
+En (4.3), $\Omega\times\A[\Omega]$ se evalúa en el paso anterior (explícito). Para piezas largas que giran rápido,
+eso inyecta energía. Si aparece en las pruebas, se resuelve ese término de forma implícita con una iteración de
+Newton sobre la ecuación de Euler: es una mejora del módulo, no un cambio de método.
+\end{nota}
+
+\begin{codigo}[Qué programar]
+\begin{tabularx}{\linewidth}{@{}l Y@{}}
+\texttt{nucleo/masa.js} & \texttt{propiedadesDeMasa(vértices, triángulos, densidad)}: $m$, $\vect c$, $\mathbf I$
+  (1.1--1.2); \texttt{ejesPrincipales(I)} por Jacobi.\\
+\texttt{nucleo/cuerpo.js} & Clase \texttt{Cuerpo}: motor, velocidad en el cuerpo, masa, inercia principal, forques
+  acumulados; \texttt{inercia}($\Omega$), \texttt{inerciaInversa(P)}, \texttt{energia()}, \texttt{momentoEnEspacio()}.\\
+\texttt{nucleo/fuerzas.js} & \texttt{fuerzaEn(punto, vector)}, \texttt{gravedad(cuerpo)}.\\
+\texttt{nucleo/integrador.js} & \texttt{paso(cuerpos, h)} con (4.3)--(4.4); subpasos.\\
+\texttt{app/} & Laboratorio de giro: lanzar una pieza con la mano, con o sin gravedad.\\
+\end{tabularx}
+\end{codigo}
+
+\begin{control}
+\begin{enumerate}[leftmargin=*]
+  \item ¿Por qué la suma de tetraedros con el origen da la masa correcta aunque el origen esté fuera de la pieza?
+  \item ¿Por qué conviene trabajar en el marco principal del cuerpo?
+  \item ¿Qué representa el término $\Omega\times\A[\Omega]$? ¿Por qué no aparece en el marco del espacio?
+  \item ¿Por qué Euler explícito hace crecer la energía de un oscilador?
+  \item ¿Qué significa que un método sea simpléctico y por qué importa en simulaciones largas?
+  \item ¿Por qué la viga voltea al girar en su eje intermedio?
+\end{enumerate}
+\end{control}
+
+\begin{cierre}
+Ejercicios 2.1--2.5 · pruebas P1 (caída libre) y P11 (cuerpo libre: momento conservado con deriva menor que 0{,}1\,\%
+en 10\,s) · masa e inercia de todas las piezas del catálogo · cara pública: el laboratorio de giro.
+\end{cierre}
+
+\end{document}

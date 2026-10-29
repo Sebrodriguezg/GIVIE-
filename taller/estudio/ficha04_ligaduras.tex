@@ -1,0 +1,160 @@
+% Ficha de estudio 4 del Taller virtual ATA EPE: ligaduras dinámicas, tornillos, tuercas y cuerpos compuestos.
+\documentclass[11pt,a4paper]{article}
+\input{comun}
+\cabecera{4}{Uniones que se sostienen: tornillos, tuercas y cuerpos compuestos}{Módulo 4: ligaduras dinámicas}
+
+\begin{document}
+\maketitle
+\vspace{-2.5em}
+
+\begin{meta}
+\textbf{\textcolor{amarillo}{Meta del módulo.}} Hacer que las uniones se cumplan mientras el montaje se mueve:
+calcular en cada paso los impulsos que las sostienen, sin que se separen con el tiempo. Modelar el tornillo como pieza,
+los estados de la tuerca y la fusión de piezas en un solo cuerpo. Cara pública: \textbf{tornillos y tuercas} —
+aflojar, ajustar y apretar cambian cómo se mueve el montaje.
+\end{meta}
+
+\begin{lectura}
+\begin{enumerate}[leftmargin=*]
+  \item \textbf{Baraff y Witkin, \emph{Physically Based Modeling} (SIGGRAPH 2001)}, notas de dinámica con
+        ligaduras: la formulación de impulsos.
+  \item \textbf{Catto, «Iterative dynamics with temporal coherence» (GDC 2005)}: impulsos secuenciales,
+        acumulación y arranque en caliente. Es el corazón práctico del módulo.
+  \item \textbf{Hadfield y Lasenby, «Constrained dynamics in conformal and projective geometric algebra» (2020)}:
+        las ligaduras con potencia virtual en PGA.
+  \item Macklin, Müller y Chentanez, «XPBD» (2016) y Müller et al., «Detailed rigid body simulation with XPBD»
+        (2020): la alternativa en posiciones, para comparar.
+  \item Goldstein, §2.4: multiplicadores de Lagrange (repaso del módulo 3).
+\end{enumerate}
+\end{lectura}
+
+% =================================================================================================
+\section{De la ecuación a los impulsos}
+
+Con ligaduras, el movimiento cumple
+\begin{equation}
+  \mathbf M\dot{\vect u} = \vect f + \mathbf J^{\mathsf T}\vect\lambda,\qquad \mathbf J\vect u = \vect 0,
+\end{equation}
+donde $\vect u$ junta las velocidades de todos los cuerpos y $\mathbf M$ sus masas e inercias. Discretizando con el
+paso semiimplícito del módulo 2, la velocidad nueva es $\vect u^+ = \vect u + h\mathbf M^{-1}(\vect f + \mathbf
+J^{\mathsf T}\vect\lambda)$. Exigiendo $\mathbf J\vect u^+ = -\tfrac{\beta}{h}\vect C$ (cumplir la ligadura en
+velocidad y corregir la deriva acumulada en posición):
+\begin{equation}
+  \bigl(\mathbf J\mathbf M^{-1}\mathbf J^{\mathsf T}\bigr)\,\vect P = -\mathbf J\bigl(\vect u + h\mathbf M^{-1}\vect f\bigr)
+  - \frac{\beta}{h}\vect C,\qquad \vect P = h\vect\lambda .
+\end{equation}
+$\vect P$ son \emph{impulsos}. El término $\beta\vect C/h$ (estabilización de Baumgarte, $\beta\approx0{,}1$--$0{,}2$)
+devuelve poco a poco las piezas a su lugar si se separaron por redondeo.
+
+\begin{ejercicio}{4.1}
+Para un péndulo (un punto de masa $m$ atado a distancia $\ell$ del origen), escribe $C$, $\mathbf J$ y la ecuación
+(1.2) con un solo impulso. Verifica que el impulso es la tensión del hilo por $h$.
+\end{ejercicio}
+
+\subsection{Impulsos secuenciales (Gauss--Seidel proyectado)}
+En lugar de resolver (1.2) entera, se recorren las ligaduras una por una, corrigiendo la velocidad con el impulso que
+cumple esa sola fila:
+\begin{equation}
+  \Delta P_i = -\frac{\mathbf J_i\vect u + b_i}{\mathbf J_i\mathbf M^{-1}\mathbf J_i^{\mathsf T}},\qquad
+  \vect u \leftarrow \vect u + \mathbf M^{-1}\mathbf J_i^{\mathsf T}\Delta P_i ,
+\end{equation}
+y se repite unas 8--20 veces. Es el método de Gauss--Seidel sobre (1.2). Se \emph{acumula} el impulso total de cada
+fila; si la fila tiene límites (un motor con par máximo, la fricción), se recorta el acumulado, no el incremento. Al
+empezar el paso siguiente se reutilizan los impulsos del anterior (\emph{arranque en caliente}): converge mucho más
+rápido.
+
+\begin{ejercicio}{4.2}
+Muestra que (1.3) es exactamente una iteración de Gauss--Seidel para (1.2). ¿Por qué converge (pista: la matriz
+$\mathbf J\mathbf M^{-1}\mathbf J^{\mathsf T}$ es simétrica y semidefinida positiva)? ¿Qué pasa si hay ligaduras
+redundantes, como en el módulo 3?
+\end{ejercicio}
+
+% =================================================================================================
+\section{Las uniones del kit en PGA}
+
+Cada unión tiene un \emph{ancla} en cada pieza: la recta del agujero, $L_a$ y $L_b$, en sus marcos.
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Posición}: las rectas deben coincidir en el mundo. El error $M_aL_a\rev M_a - M_bL_b\rev M_b$ es un
+        bivector; sus componentes dan $\vect C$ (y para la fija se agrega el ángulo relativo).
+  \item \textbf{Velocidad}: las filas de $\mathbf J$ son una base de los forques recíprocos a lo que la unión permite
+        (ficha 3, §4). La unión de revolución da 5 filas; la cilíndrica, 4; la fija, 6.
+  \item \textbf{Fricción en el eje}: una fila extra a lo largo de $L$ (velocidad relativa de giro igual a cero), con el
+        impulso acumulado recortado a $\pm\tau_f\,h$. Si no hay par suficiente para vencerla, no gira.
+\end{itemize}
+
+% =================================================================================================
+\section{Tornillos y tuercas}
+
+\subsection{Estados}
+\begin{tabularx}{\linewidth}{@{}l l Y@{}}
+\toprule
+\textbf{Estado de la tuerca} & \textbf{Unión pieza–tornillo} & \textbf{Comportamiento}\\
+\midrule
+Sin tuerca & cilíndrica & gira y se desliza; la gravedad puede sacar el tornillo\\
+Floja & revolución & gira libre (fricción pequeña)\\
+Ajustada & revolución con fricción $\tau_f$ & gira solo si se fuerza\\
+Apretada & fija & las piezas se fusionan (§4)\\
+\bottomrule
+\end{tabularx}
+
+\subsection{Apriete y enroscado}
+Apretar con un par $T$ da una precarga $F_p = T/(Kd)$ y un par de fricción $\tau_f = \mu F_p r_m$ (plan, sección del
+grafo de ensamble). Enroscar la tuerca es un movimiento de tornillo con el paso de la rosca: en PGA,
+\begin{equation}
+  M_{\text{tuerca}}(\theta) = \exp\!\Bigl(-\tfrac{\theta}{2}\bigl(L + \tfrac{p}{2\pi}\,\I L\bigr)\Bigr),
+\end{equation}
+con $L$ el eje del tornillo y $p = 0{,}7$\,mm. La animación del apriete es esta exponencial.
+
+\begin{ejercicio}{4.3}
+Verifica que (3.1) avanza $p$ por vuelta. ¿Qué cambia si la rosca fuera izquierda?
+\end{ejercicio}
+
+% =================================================================================================
+\section{Cuerpos compuestos}
+
+Las uniones fijas definen clases de equivalencia de piezas (unión–búsqueda). Cada clase es un solo cuerpo rígido, con
+la masa e inercia combinadas (Steiner, módulo 2). Al fusionar, se conserva el momento total. En PGA es especialmente
+limpio: los momentos son rectas en el espacio, y se suman.
+\begin{equation}
+  P_{\text{compuesto}} = \sum_i P_i^{(e)}\quad\Longrightarrow\quad \Omega_{\text{compuesto}} = \A_{\text{compuesto}}^{-1}[P_{\text{compuesto}}].
+\end{equation}
+Al aflojar, el cuerpo se separa y cada pieza hereda la velocidad rígida del cuerpo en su posición.
+
+\begin{ejercicio}{4.4}
+Muestra que al fusionar la energía cinética nunca aumenta: $T_{\text{después}}\le T_{\text{antes}}$ (es un choque
+perfectamente inelástico). ¿Cuándo se conserva exactamente?
+\end{ejercicio}
+
+\begin{nota}{Pares de piezas que no chocan}
+Las piezas unidas por un tornillo se tocan por diseño (el tornillo atraviesa el agujero). En el módulo 5, el detector
+de colisiones debe ignorar los pares conectados en el grafo de ensamble.
+\end{nota}
+
+\begin{codigo}[Qué programar]
+\begin{tabularx}{\linewidth}{@{}l Y@{}}
+\texttt{nucleo/ligaduras.js} & Uniones de revolución, cilíndrica y fija; fila de fricción; solucionador por impulsos
+  secuenciales con acumulación, recorte y arranque en caliente; Baumgarte.\\
+\texttt{kit/ensamble.js} & Grafo de piezas y uniones; insertar un tornillo por agujeros alineados.\\
+\texttt{kit/tornilleria.js} & Estados de la tuerca, apriete, enroscado (3.1).\\
+\texttt{kit/compuestos.js} & Unión–búsqueda, fusión con conservación del momento (4.1), separación.\\
+\texttt{app/} & Herramientas tornillo, tuerca y llave; contorno del cuerpo compuesto.\\
+\end{tabularx}
+\end{codigo}
+
+\begin{control}
+\begin{enumerate}[leftmargin=*]
+  \item ¿Por qué se resuelven impulsos en lugar de fuerzas?
+  \item ¿Qué hace la estabilización de Baumgarte y qué pasa si $\beta$ es muy grande?
+  \item ¿Por qué se recorta el impulso acumulado y no el incremento?
+  \item ¿Qué gana el arranque en caliente?
+  \item ¿Por qué fusionar un tornillo con una rueda mejora la estabilidad numérica?
+  \item ¿Qué se conserva al fusionar y qué no?
+\end{enumerate}
+\end{control}
+
+\begin{cierre}
+Ejercicios 4.1--4.4 · pruebas P2 (péndulo físico), P8 (fusión conserva el momento) y P9 (el tornillo sin tuerca se
+cae) · cadena de 5 vigas estable · cara pública: tornillos y tuercas.
+\end{cierre}
+
+\end{document}

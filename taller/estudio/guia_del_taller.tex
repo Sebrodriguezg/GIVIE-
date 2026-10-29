@@ -1,0 +1,183 @@
+% Guía del Taller virtual ATA EPE: cómo se estudia, se construye y se publica cada módulo.
+% Compilar:  latexmk -pdf guia_del_taller.tex
+\documentclass[11pt,a4paper]{article}
+\input{comun}
+\title{\textcolor{morado}{\textbf{Guía del taller}}\\[3pt]
+  \large Taller virtual ATA EPE · Cómo se estudia, se construye y se publica}
+\author{}\date{}
+
+\begin{document}
+\maketitle
+\vspace{-2em}
+
+\begin{meta}
+\textbf{\textcolor{amarillo}{Para qué es esta guía.}} El taller es un curso que se aprende construyendo: nueve
+módulos, cada uno con una ficha de estudio, unas pruebas y una función nueva en la web. Esta guía explica el ciclo de
+trabajo de cada módulo, las herramientas, las reglas del código y cómo se sube y se publica lo hecho.
+\end{meta}
+
+\tableofcontents
+
+% =================================================================================================
+\section{El mapa del curso}
+
+\begin{tabularx}{\linewidth}{@{}l l Y l@{}}
+\toprule
+& \textbf{Ficha} & \textbf{Tema} & \textbf{Horas}\\
+\midrule
+0 & \texttt{ficha00\_pga} & Del producto geométrico a la PGA: el lenguaje del simulador & 15\\
+1 & \texttt{ficha01\_cinematica} & Movimientos rígidos, tornillos, velocidad, armar e imantar piezas & 15\\
+2 & \texttt{ficha02\_dinamica} & Masa, inercia, Newton–Euler en PGA, integradores en el grupo & 20\\
+3 & \texttt{ficha03\_analitica\_i} & Ligaduras, grados de libertad, ejes, rango del jacobiano & 15\\
+4 & \texttt{ficha04\_ligaduras} & Uniones dinámicas, tornillos y tuercas, cuerpos compuestos & 25\\
+5 & \texttt{ficha05\_contacto} & Colisiones, contacto unilateral y fricción de Coulomb & 35\\
+6 & \texttt{ficha06\_transmisiones} & Ruedas de fricción, bandas elásticas, manivela & 20\\
+7 & \texttt{ficha07\_analitica\_ii} & Lagrangiano reducido, trabajo virtual, «Ver las cuentas» & 15\\
+8 & \texttt{ficha08\_compartir} & Guardar, compartir, retos y realidad aumentada & 10\\
+\midrule
+& & \textbf{Total} & \textbf{$\approx$ 170 h}\\
+\bottomrule
+\end{tabularx}
+
+\medskip
+Las horas son una estimación para alguien que estudia y programa a la vez. A un ritmo de 6 a 8 horas por semana, el
+curso completo toma de 5 a 7 meses. El orden importa: cada módulo usa lo de los anteriores.
+
+% =================================================================================================
+\section{El ciclo de cada módulo}
+
+\begin{tabularx}{\linewidth}{@{}l l Y@{}}
+\toprule
+\textbf{Paso} & & \textbf{Qué se hace}\\
+\midrule
+1 & \faBook~Leer & Las lecturas de la ficha, en el orden indicado. Lo marcado en negrita es lo esencial.\\
+2 & \faPencil*~Hacer & Los ejercicios a mano, en papel o en \texttt{estudio/soluciones/fichaNN.tex}.\\
+3 & \faQuestionCircle~Responder & Las preguntas de control, por escrito. Si una no sale, se vuelve a las lecturas.\\
+4 & \faProjectDiagram~Discretizar & Escribir en pseudocódigo el algoritmo del módulo, con sus fuentes de error.\\
+5 & \faFileContract~Contrato & Se generan las pruebas y el esqueleto del módulo (con Claude, a partir de la
+  ficha y de lo ya implementado).\\
+6 & \faCode~Implementar & En una rama propia, hasta que pasen las pruebas.\\
+7 & \faCheck~Verificar & Pruebas automáticas, prueba visual en el navegador y revisión del código.\\
+8 & \faUpload~Subir & Fusionar la rama con \texttt{main} y subir: GitHub Pages publica solo.\\
+9 & \faFlagCheckered~Cerrar & Marcar el módulo en la bitácora y anotar lo aprendido y lo pendiente.\\
+\bottomrule
+\end{tabularx}
+
+\begin{nota}{La regla de oro}
+No se escribe código de un módulo sin haber hecho los pasos 1 a 4. Si al programar aparece algo que no se entiende,
+se vuelve a la ficha: el código es la última expresión de una idea que ya está clara en papel.
+\end{nota}
+
+% =================================================================================================
+\section{Herramientas}
+
+\begin{tabularx}{\linewidth}{@{}l Y@{}}
+\toprule
+\textbf{Herramienta} & \textbf{Para qué}\\
+\midrule
+Node 22 & Correr las pruebas: \texttt{node --test "pruebas/*.test.js"} desde \texttt{taller/}.\\
+Navegador & Ver la cara pública. Servidor local desde la carpeta \texttt{Cartilla}:
+  \texttt{python3 -m http.server 8765}, y abrir \texttt{http://localhost:8765/taller/}.\\
+Git y GitHub & Ramas por módulo, historial y publicación (el repositorio de la web).\\
+LaTeX & Las fichas y las soluciones: \texttt{latexmk -pdf fichaNN\_*.tex}.\\
+Editor & Cualquiera con resaltado de JavaScript (VS Code, por ejemplo).\\
+\bottomrule
+\end{tabularx}
+
+% =================================================================================================
+\section{Carpetas}
+
+\begin{lstlisting}
+taller/
+  plan/          el plan general (modelo físico, módulos, bibliografía)
+  estudio/       esta guía, las fichas, comun.tex, soluciones/ y bitacora.md
+  nucleo/        el motor: pga, cinemática, cuerpo, integrador, ligaduras, colisión, contacto
+  kit/           lo propio del kit: catálogo con puertos, ensamble, tornillería, ruedas, bandas
+  analisis/      grados de libertad, lagrangiano reducido, trabajo virtual
+  app/           la cara pública: escena, interfaz, instrumentos
+  pruebas/       una prueba por archivo del núcleo, del kit y del análisis
+  index.html     la entrada pública del taller
+\end{lstlisting}
+
+% =================================================================================================
+\section{Reglas del código}
+
+\begin{enumerate}[leftmargin=*]
+  \item \textbf{Nombres en español}, como el resto de la web: \texttt{velocidad}, \texttt{motor}, \texttt{inercia}.
+  \item \textbf{Cada función dice qué ecuación implementa}: «ficha 2, ec. 3.4». Si no hay ecuación, falta teoría.
+  \item \textbf{El núcleo no conoce el dibujo.} \texttt{nucleo/}, \texttt{kit/} y \texttt{analisis/} no importan
+        three.js ni tocan la página; así se prueban con Node. Solo \texttt{app/} dibuja.
+  \item \textbf{Sin librerías de física ni de álgebra.} Todo lo numérico se escribe aquí.
+  \item \textbf{Multivectores en \texttt{Float64Array(16)}}, como en la ficha 0. Las versiones rápidas
+        (especializadas) se prueban siempre contra las generales.
+  \item \textbf{Unidades CGS} dentro del núcleo (cm, g, s); conversión a SI solo al mostrar.
+  \item \textbf{Determinismo}: mismo montaje, mismo paso de tiempo, mismo resultado. Nada de \texttt{Math.random}
+        sin semilla en el núcleo.
+  \item \textbf{Pruebas primero}: cada error encontrado se convierte en una prueba nueva antes de corregirlo.
+\end{enumerate}
+
+% =================================================================================================
+\section{Git: ramas, commits y publicación}
+
+Cada módulo vive en su rama hasta que está cerrado:
+\begin{lstlisting}
+git checkout main && git pull                 # partir de lo último
+git checkout -b modulo-01-cinematica          # rama del módulo
+# ... estudiar, implementar ...
+node --test "pruebas/*.test.js"               # desde taller/: todo en verde
+git add taller && git commit -m "Módulo 1: motor entre rectas e imantado"
+git push -u origin modulo-01-cinematica       # copia de seguridad en GitHub
+\end{lstlisting}
+
+Al cerrar el módulo:
+\begin{lstlisting}
+git checkout main && git merge modulo-01-cinematica
+git push                                      # GitHub Pages publica /taller/ en 1-2 minutos
+\end{lstlisting}
+
+\begin{nota}{Mensajes de commit}
+En español y en presente, diciendo qué cambia: «Módulo 2: integrador semiimplícito en el grupo». Un commit por idea:
+es más fácil volver atrás y se lee como un diario del aprendizaje.
+\end{nota}
+
+% =================================================================================================
+\section{Cómo trabajar con Claude en el taller}
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Contrato del módulo} (paso 5): «genera el contrato del módulo 2». Claude escribe las pruebas y el
+        esqueleto a partir de la ficha y de tu código de los módulos anteriores, y valida las pruebas contra una
+        implementación de referencia que queda fuera del proyecto, en \texttt{\textasciitilde/Documents/Taller\_referencia}.
+  \item \textbf{Revisión}: «revisa mi \texttt{pga.js}». Claude explica cada corrección con la ecuación detrás, sin
+        reescribir tu código salvo que lo pidas.
+  \item \textbf{Dudas de teoría}: preguntar por la ecuación concreta de la ficha; si la ficha tiene un error, se
+        corrige la ficha.
+  \item \textbf{La referencia} existe para comparar \emph{después} de intentarlo, no antes.
+\end{itemize}
+
+% =================================================================================================
+\section{La bitácora}
+
+En \texttt{estudio/bitacora.md}, una entrada por sesión de trabajo:
+\begin{lstlisting}
+## 2026-11-02 · Módulo 0 · 2 h
+- Leído: Doran y Lasenby §2.1-2.4.
+- Hecho: ejercicios 0.1 y 0.2. El signo del rotor: e1 gira hacia e2.
+- Duda: por qué el regresivo necesita el dual de Poincaré.
+- Siguiente: ejercicio 0.3 y productoBlades.
+\end{lstlisting}
+Sirve para retomar sin perder el hilo y, al final, es el registro de todo el proyecto.
+
+% =================================================================================================
+\section{Checklist de cierre de cada módulo}
+
+\begin{itemize}[leftmargin=*]
+  \item[{\faSquare[regular]}] Lecturas hechas y ejercicios resueltos.
+  \item[{\faSquare[regular]}] Preguntas de control respondidas por escrito.
+  \item[{\faSquare[regular]}] Pseudocódigo de la discretización en las soluciones.
+  \item[{\faSquare[regular]}] \texttt{node --test} en verde, incluidas las pruebas de módulos anteriores.
+  \item[{\faSquare[regular]}] La función pública funciona en computador y celular.
+  \item[{\faSquare[regular]}] Rama fusionada con \texttt{main} y subida.
+  \item[{\faSquare[regular]}] Entrada de cierre en la bitácora.
+\end{itemize}
+
+\end{document}

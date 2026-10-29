@@ -1,0 +1,156 @@
+% Ficha de estudio 5 del Taller virtual ATA EPE: colisiones, contacto y fricción.
+\documentclass[11pt,a4paper]{article}
+\input{comun}
+\cabecera{5}{Colisiones, contacto y fricción}{Módulo 5: contacto}
+
+\begin{document}
+\maketitle
+\vspace{-2.5em}
+
+\begin{meta}
+\textbf{\textcolor{amarillo}{Meta del módulo.}} Detectar cuándo y dónde se tocan dos piezas, y resolver ese contacto
+con las leyes de Signorini y de Coulomb: que no se atraviesen, que no se peguen, que deslicen o se adhieran según la
+fricción, y que se puedan apilar sin temblar. Es el módulo más largo. Cara pública: \textbf{la mesa} — piezas que
+caen, chocan, ruedan y se apilan.
+\end{meta}
+
+\begin{lectura}
+\begin{enumerate}[leftmargin=*]
+  \item \textbf{Ericson, \emph{Real-Time Collision Detection}}, caps.~4 (volúmenes envolventes), 5 (pruebas entre
+        primitivas, incluido SAT) y 9 (GJK).
+  \item \textbf{Catto, «Iterative dynamics with temporal coherence» (GDC 2005)}: contactos persistentes, fricción
+        acumulada y apilamiento estable.
+  \item \textbf{Stewart y Trinkle (1996)}: el contacto con fricción como problema de complementariedad, con rigor.
+  \item van den Bergen, \emph{Collision Detection in Interactive 3D Environments}, cap.~4: GJK y EPA en detalle.
+  \item Baraff y Witkin (SIGGRAPH 2001), notas de contacto; Johnson, \emph{Contact Mechanics}, cap.~1 (para entender
+        qué se está idealizando).
+\end{enumerate}
+\end{lectura}
+
+% =================================================================================================
+\section{Formas de colisión}
+
+La malla visual (con agujeros, roscas y biseles) es demasiado compleja para chocar. Cada pieza tiene una forma
+simple: unión de cajas, cilindros y cápsulas, todas convexas. Lo que define a una forma convexa es su
+\textbf{función soporte}: el punto más lejano en una dirección $\vect d$,
+\begin{equation}
+  s_K(\vect d) = \arg\max_{\vect x\in K}\ \vect d\cdot\vect x .
+\end{equation}
+Para un cilindro de radio $r$, altura $h$ y eje $\hat{\vect a}$:
+$s(\vect d) = \vect c + \operatorname{sgn}(\vect d\cdot\hat{\vect a})\tfrac h2\hat{\vect a} + r\,
+\dfrac{\vect d_\perp}{\lVert\vect d_\perp\rVert}$, con $\vect d_\perp$ la parte de $\vect d$ perpendicular al eje.
+
+\begin{ejercicio}{5.1}
+Escribe la función soporte de una caja orientada y de una cápsula. Para una viga del kit, ¿qué error se comete al
+ignorar los agujeros en la colisión? ¿Importa para el kit real?
+\end{ejercicio}
+
+% =================================================================================================
+\section{Detección en dos etapas}
+
+\subsection{Etapa gruesa}
+Cada forma se encierra en una caja alineada a los ejes (AABB). Solo los pares cuyas AABB se tocan pasan a la etapa
+fina. Ordenar los extremos de las cajas en un eje (\emph{barrido y poda}) evita comparar todos contra todos.
+Además se descartan los pares unidos en el grafo de ensamble (ficha 4).
+
+\subsection{Etapa fina}
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Teorema del eje separador (SAT)}: dos convexos no se tocan si y solo si existe un eje en el que sus
+        proyecciones no se superponen. Para dos cajas bastan 15 ejes: 3 normales de cada caja y 9 productos cruz de
+        aristas. El eje de menor superposición da la normal y la profundidad.
+  \item \textbf{GJK}: para convexos generales, trabaja con la diferencia de Minkowski $A - B$ (los convexos se tocan
+        si y solo si contiene el origen) usando solo funciones soporte, $s_{A-B}(\vect d) = s_A(\vect d) - s_B(-\vect d)$.
+        Construye un símplice que se acerca al origen.
+  \item \textbf{EPA}: si GJK encuentra el origen dentro, expande el símplice hasta la cara más cercana al origen:
+        normal y profundidad de penetración.
+\end{itemize}
+
+\begin{ejercicio}{5.2}
+Demuestra que dos convexos se intersecan si y solo si $\vect 0\in A - B$. Dibuja en 2D una iteración de GJK con un
+triángulo y un cuadrado.
+\end{ejercicio}
+
+\subsection{Puntos de contacto}
+Una cara apoyada en otra no se toca en un punto sino en un polígono. Se recorta una cara contra la otra
+(Sutherland--Hodgman) y se guardan hasta 4 puntos. Los contactos se reconocen de un paso al siguiente (\emph{contactos
+persistentes}) para reutilizar sus impulsos.
+
+\begin{nota}{En PGA}
+La distancia con signo de un punto $P$ a un plano normalizado $p$ sale de $p\wedge P = d\,\I$; el plano de una cara
+es un vector; recortar un polígono por un plano es evaluar ese signo en cada vértice e intersecar las aristas que lo
+cambian con $L\wedge p$. Todo el recorte se escribe con las operaciones de la ficha 0.
+\end{nota}
+
+% =================================================================================================
+\section{La física del contacto}
+
+\subsection{Signorini}
+En cada punto de contacto, con separación $g$ y fuerza normal $\lambda_n$:
+\begin{equation}
+  g \ge 0,\qquad \lambda_n \ge 0,\qquad g\,\lambda_n = 0 .
+\end{equation}
+O no se tocan, o se tocan y empujan; nunca tiran. Es una condición de \emph{complementariedad}.
+
+\subsection{Coulomb}
+La fuerza tangencial $\vect\lambda_t$ está en el cono de fricción y, si hay deslizamiento, se opone a él con la máxima
+disipación:
+\begin{equation}
+  \lVert\vect\lambda_t\rVert\le\mu\lambda_n,\qquad \vect v_t \ne 0\ \Rightarrow\ \vect\lambda_t = -\mu\lambda_n\frac{\vect v_t}{\lVert\vect v_t\rVert}.
+\end{equation}
+Juntas, (3.1) y (3.2) forman un problema de complementariedad no lineal (Stewart y Trinkle lo plantean como LCP
+aproximando el cono con una pirámide).
+
+\subsection{Discretización con impulsos}
+Se agregan a los impulsos secuenciales de la ficha 4 dos tipos de fila por contacto:
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Normal}: impulso acumulado recortado a $P_n\ge0$; con un sesgo $-\tfrac{\beta}{h}\max(0, \delta - \delta_0)$
+        para corregir la penetración $\delta$ (dejando un margen $\delta_0$ que evita el temblor), y el rebote
+        $v_n^+\ge -e\,v_n^-$ si el choque es rápido.
+  \item \textbf{Tangencial} (dos direcciones): impulso acumulado proyectado al disco $\lVert\vect P_t\rVert\le\mu P_n$.
+\end{itemize}
+
+\begin{ejercicio}{5.3}
+Una caja que desliza con velocidad inicial $v_0$ sobre la mesa se detiene en $d = v_0^2/(2\mu g)$. Deduce por qué el
+algoritmo anterior reproduce ese resultado, y escríbelo como prueba (con su tolerancia).
+\end{ejercicio}
+
+\begin{ejercicio}{5.4}
+Un cubo apoyado en un plano inclinado de ángulo $\theta$: con el algoritmo, ¿para qué $\theta$ empieza a deslizar?
+Compara con $\tan\theta_c = \mu$ (prueba P3).
+\end{ejercicio}
+
+% =================================================================================================
+\section{Apilar sin temblar}
+
+Lo que separa una simulación de juguete de una buena es poder apilar. Ingredientes, en orden de importancia:
+contactos persistentes con arranque en caliente; margen de penetración $\delta_0$; suficientes iteraciones; y
+corrección de posición separada de la velocidad (\emph{split impulse}) para que corregir la penetración no meta
+energía. Los cuerpos que casi no se mueven se \emph{duermen}.
+
+\begin{codigo}[Qué programar]
+\begin{tabularx}{\linewidth}{@{}l Y@{}}
+\texttt{nucleo/formas.js} & Cajas, cilindros, cápsulas y uniones de ellas; funciones soporte; AABB.\\
+\texttt{nucleo/colision.js} & Barrido y poda; SAT caja–caja; GJK y EPA; contactos de cara (recorte); persistencia.\\
+\texttt{nucleo/contacto.js} & Filas normal y tangencial en el solucionador de la ficha 4; rebote; margen; reposo.\\
+\texttt{kit/catalogo.js} & Forma de colisión de cada pieza.\\
+\texttt{app/} & La mesa: soltar, lanzar, apilar.\\
+\end{tabularx}
+\end{codigo}
+
+\begin{control}
+\begin{enumerate}[leftmargin=*]
+  \item ¿Por qué basta conocer la función soporte de un convexo para detectar colisiones con GJK?
+  \item ¿Por qué la condición de Signorini es una complementariedad y no una ecuación?
+  \item ¿Qué es el principio de máxima disipación en la fricción de Coulomb?
+  \item ¿Por qué se proyecta el impulso tangencial al disco $\mu P_n$ y no se resuelve exactamente?
+  \item ¿Para qué sirve el margen de penetración?
+  \item ¿Por qué los pares unidos en el ensamble no deben chocar?
+\end{enumerate}
+\end{control}
+
+\begin{cierre}
+Ejercicios 5.1--5.4 · prueba P3 y las nuevas (frenado $v_0^2/2\mu g$, rebote $e^2h$, pila de 5 vigas quieta 2\,s) ·
+cara pública: la mesa con piezas que chocan y se apilan.
+\end{cierre}
+
+\end{document}

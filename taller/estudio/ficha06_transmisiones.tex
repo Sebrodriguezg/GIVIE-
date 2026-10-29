@@ -1,0 +1,147 @@
+% Ficha de estudio 6 del Taller virtual ATA EPE: ruedas de fricción, bandas elásticas y manivela.
+\documentclass[11pt,a4paper]{article}
+\input{comun}
+\cabecera{6}{Ruedas, bandas y manivela}{Módulo 6: transmisiones}
+
+\begin{document}
+\maketitle
+\vspace{-2.5em}
+
+\begin{meta}
+\textbf{\textcolor{amarillo}{Meta del módulo.}} Transmitir movimiento como lo hace el kit: ruedas que se empujan por
+fricción (de canto o de forma transversal), bandas elásticas que se estiran y patinan, y una manivela que se gira con
+el dedo. Cara pública: \textbf{transmitir} — el sistema de dos ruedas, bandas entre poleas, la rueda que se corre
+sobre un disco y cambia de velocidad.
+\end{meta}
+
+\begin{lectura}
+\begin{enumerate}[leftmargin=*]
+  \item \textbf{Johnson, \emph{Contact Mechanics}, cap.~8}: rodadura, deslizamiento parcial (\emph{creep}) y
+        pivoteo (\emph{spin}).
+  \item \textbf{Treloar, \emph{The Physics of Rubber Elasticity}, caps.~1--4}: por qué el caucho es elástico
+        (entropía) y la ley neo-Hookeana.
+  \item Budynas y Nisbett, \emph{Shigley's Mechanical Engineering Design}, cap.~17: transmisiones por banda,
+        tensiones y deslizamiento.
+  \item Cualquier texto de estática (por ejemplo Meriam y Kraige, \emph{Statics}, fricción en bandas): la ecuación
+        del cabrestante.
+  \item Plan del taller, secciones de ruedas de fricción y bandas elásticas (los modelos completos).
+\end{enumerate}
+\end{lectura}
+
+% =================================================================================================
+\section{Rodar sin deslizar}
+
+En el punto de contacto $P$ de dos cuerpos con velocidades $\Omega_A$ y $\Omega_B$ (en el espacio), la velocidad
+relativa de las superficies sale de la ficha 1:
+$\dot P_A - \dot P_B = P\times(\Omega_A - \Omega_B)$ (con el signo de la convención). Rodar es que su parte tangencial
+sea nula. Con ejes fijos es una ligadura holónoma; se agrega al solucionador como una fila más.
+
+\subsection{Canto con canto}
+Ejes paralelos, radios $R_A$, $R_B$: $\omega_AR_A = -\omega_BR_B$. El sistema de dos ruedas de la cartilla
+($R_A/R_B = 1/3$) gira tres veces más lento en la grande, y al revés.
+
+\subsection{Canto contra cara (transversal)}
+Una rueda de radio $R$ apoyada a distancia $r$ del eje de un disco, con ejes perpendiculares:
+\begin{equation}
+  \omega_{\text{rueda}}\,R = \omega_{\text{disco}}\,r \quad\Longrightarrow\quad \frac{\omega_{\text{rueda}}}{\omega_{\text{disco}}} = \frac rR .
+\end{equation}
+La relación cambia con la posición del contacto: es una transmisión continua.
+
+\begin{ejercicio}{6.1}
+Deduce (1.1) con la velocidad de los puntos en PGA. ¿Qué pasa con el sentido de giro de la rueda cuando el contacto
+cruza el centro del disco?
+\end{ejercicio}
+
+\subsection{Deslizamiento y pivoteo}
+El contacto transmite como máximo $\mu N$ de fuerza tangencial; más allá, patina. Para no tener un salto en
+$\operatorname{sgn}(s)$ se regulariza: $F_t = -\mu N\tanh(s/s_0)$. En la transversal, el contacto es una franja de ancho
+$w$ y sus extremos no pueden rodar a la vez: se disipa $P\approx\mu N\,\omega_{\text{disco}}\,w/4$.
+
+\begin{ejercicio}{6.2}
+Deduce la potencia de pivoteo integrando $\mu\,(N/w)\,\lvert\omega x\rvert$ para $x\in[-w/2, w/2]$.
+\end{ejercicio}
+
+% =================================================================================================
+\section{El caucho}
+
+\subsection{Por qué es elástico}
+El caucho es una red de cadenas largas. Estirarlo no aumenta tanto su energía como disminuye su \emph{entropía}: las
+cadenas pasan de enredadas a alineadas. La teoría de redes gaussianas da la energía de deformación
+$W = \tfrac G2(\lambda_1^2+\lambda_2^2+\lambda_3^2-3)$, con $G = nk_BT$ ($n$ cadenas por volumen). Para una banda
+estirada a lo largo (volumen constante, $\lambda_2 = \lambda_3 = \lambda^{-1/2}$):
+\begin{equation}
+  F = G\,A_0\,\bigl(\lambda - \lambda^{-2}\bigr),\qquad \lambda = L/L_0 .
+\end{equation}
+Para estiramientos pequeños, $\lambda = 1+\varepsilon$, se recupera Hooke con $E = 3G$.
+
+\begin{ejercicio}{6.3}
+Deduce (2.1) a partir de $W$. Verifica el límite de Hooke. ¿Por qué el caucho estirado se calienta?
+\end{ejercicio}
+
+% =================================================================================================
+\section{Bandas sobre poleas}
+
+\subsection{Geometría}
+El camino de la banda está hecho de tramos rectos tangentes a dos poleas y de arcos abrazados. Entre dos círculos hay
+cuatro tangentes: dos exteriores (banda abierta) y dos interiores (cruzada); cuál se usa depende del lado por el que
+la banda abraza cada polea. Para dos poleas, $L$ tiene forma cerrada (plan, ec. de la banda abierta y cruzada).
+
+\begin{ejercicio}{6.4}
+Calcula las tangentes exteriores e interiores entre dos círculos del mismo plano. Programa la longitud de la banda
+para $n$ poleas y verifica que con dos coincide con la fórmula cerrada.
+\end{ejercicio}
+
+\subsection{El cabrestante}
+En un trozo de banda abrazado $d\theta$, la normal es $T\,d\theta$ y la fricción puede equilibrar hasta
+$dT = \mu T\,d\theta$. Integrando:
+\begin{equation}
+  \frac{T_1}{T_2}\le e^{\mu\theta}\qquad\Longrightarrow\qquad \tau_{\max} = 2T_0R\,\frac{e^{\mu\theta}-1}{e^{\mu\theta}+1}.
+\end{equation}
+
+\begin{ejercicio}{6.5}
+Deduce el par máximo de (3.1) con $T_1 = T_0 + \tau/2R$ y $T_2 = T_0 - \tau/2R$. ¿Cuánto par más transmite una banda
+si se aleja una polea de modo que $T_0$ se duplique? ¿Y si se aumenta el ángulo abrazado con una polea tensora?
+\end{ejercicio}
+
+\subsection{Modelo dinámico}
+La banda es un acople elástico entre los ángulos de las poleas, con deslizamiento acumulado $\delta$ cuando se supera
+el límite del cabrestante (plan, modelo dinámico de la banda). Cada polea recibe el par $\mp R(T_1 - T_2)$ y su eje la
+fuerza $T_1 + T_2$. Rigidez alta y masas pequeñas: hay que mirar la estabilidad ($\omega_n h < 2$, ficha 2).
+
+% =================================================================================================
+\section{La manivela y la mano}
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Manivela}: una fila de motor en la unión de revolución (ficha 4) que sigue la velocidad que pide el
+        dedo, con impulso limitado a $\tau_{\text{mano}}h$. Si el mecanismo se traba, la manivela no gira.
+  \item \textbf{Arrastrar}: un resorte con amortiguamiento crítico entre el dedo y el punto tomado,
+        $c = 2\sqrt{km}$, con fuerza máxima.
+\end{itemize}
+
+\begin{codigo}[Qué programar]
+\begin{tabularx}{\linewidth}{@{}l Y@{}}
+\texttt{kit/ruedas.js} & Detectar contacto de discos; fila de rodadura (paralela y transversal); deslizamiento
+  regularizado; pérdida por pivoteo.\\
+\texttt{kit/bandas.js} & Camino de la banda entre poleas; longitud y ángulos abrazados; tensión neo-Hookeana;
+  acople elástico con cabrestante; banda libre entre dos puntos.\\
+\texttt{app/} & Herramienta banda; manivela; instrumentos de relación de transmisión en vivo.\\
+\end{tabularx}
+\end{codigo}
+
+\begin{control}
+\begin{enumerate}[leftmargin=*]
+  \item ¿Por qué la relación de la transmisión transversal depende de $r$?
+  \item ¿Qué se pierde por pivoteo y por qué una rueda delgada pierde menos?
+  \item ¿Por qué la elasticidad del caucho es entrópica?
+  \item ¿De dónde sale la exponencial del cabrestante?
+  \item ¿Por qué una banda floja patina, y qué dos maneras hay de evitarlo?
+  \item ¿Por qué la manivela es un motor con par limitado y no una velocidad impuesta?
+\end{enumerate}
+\end{control}
+
+\begin{cierre}
+Ejercicios 6.1--6.5 · pruebas P5 (dos ruedas, $-1/3$), P6 (transversal, $r/R$), P7 (la banda patina en
+$\tau_{\max}$) y la longitud de banda · cara pública: ruedas, bandas y manivela.
+\end{cierre}
+
+\end{document}
