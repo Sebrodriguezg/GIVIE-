@@ -12,3 +12,9 @@ pendientes/*.log
 pendientes/*.fls
 pendientes/*.fdb_latexmk
 pendientes/*.out
+taller/**/*.aux
+taller/**/*.log
+taller/**/*.fls
+taller/**/*.fdb_latexmk
+taller/**/*.out
+taller/**/*.toc

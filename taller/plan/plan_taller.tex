@@ -1,0 +1,850 @@
+% Plan del Taller virtual ATA EPE: simulador físico para armar con las piezas del kit.
+% Compilar:  latexmk -pdf plan_taller.tex
+\documentclass[11pt,a4paper]{article}
+\usepackage[spanish,es-noshorthands,es-tabla]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[margin=2.2cm]{geometry}
+\usepackage[table]{xcolor}
+\usepackage{amsmath,amssymb,bm}
+\usepackage{tabularx,array,booktabs}
+\usepackage{enumitem}
+\usepackage{fontawesome5}
+\usepackage[most]{tcolorbox}
+\usepackage[hidelinks]{hyperref}
+
+\definecolor{morado}{HTML}{2A1B7E}
+\definecolor{amarillo}{HTML}{FFCF2E}
+\definecolor{rojo}{HTML}{C4142C}
+\definecolor{verde}{HTML}{1F9D55}
+\definecolor{gris}{HTML}{5D5A73}
+
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\renewcommand{\arraystretch}{1.3}
+\setlist{itemsep=1pt,topsep=3pt}
+\numberwithin{equation}{section}
+
+\newcommand{\vect}[1]{\bm{#1}}
+\newcommand{\R}{\mathbf{R}}
+\newcommand{\I}{\mathbf{I}}
+\newcommand{\E}{\mathbb{1}}
+\newcommand{\skw}[1]{[\vect{#1}]_\times}
+
+\newtcolorbox{decision}[1]{colback=amarillo!12,colframe=amarillo!80!black,fonttitle=\bfseries,title={\faLightbulb~#1}}
+\newtcolorbox{prueba}[1]{colback=verde!7,colframe=verde,fonttitle=\bfseries,title={\faCheck~#1}}
+
+\title{\textcolor{morado}{\textbf{Taller virtual ATA EPE}}\\[4pt]
+  \large Un simulador físico del kit construido desde cero:\\ proyecto de estudio en álgebra geométrica,
+  mecánica analítica y programación}
+\author{GIVIE · ATA EPE Robótica Escolar}
+\date{29 de octubre de 2026}
+
+\begin{document}
+\maketitle
+
+\begin{tcolorbox}[colback=morado,colframe=morado,coltext=white,arc=3mm]
+\textbf{\textcolor{amarillo}{La idea en una frase.}} Una mesa de trabajo en el navegador donde se toman vigas,
+ruedas, tornillos, tuercas y bandas elásticas, se unen como en la vida real, y el conjunto obedece a la física:
+gravedad, fricción, inercia, elasticidad. Si se aprieta la tuerca, las piezas se vuelven un solo cuerpo; si se deja
+floja, giran; si se gira la manivela, todo lo que está conectado responde.
+\end{tcolorbox}
+
+\begin{tcolorbox}[colback=amarillo!15,colframe=amarillo!80!black,arc=3mm]
+\textbf{Dos caras de un mismo proyecto.} \emph{Hacia el público}: un taller virtual donde cualquiera arma con el kit.
+\emph{Hacia adentro}: un proyecto de estudio donde cada pieza del simulador se construye desde cero, después de
+entender la física que la sustenta, su formulación en álgebra geométrica proyectiva (PGA) y en mecánica analítica, y
+su discretización. Nada se programa sin haberse derivado antes.
+\end{tcolorbox}
+
+\tableofcontents
+\newpage
+
+% ==========================================================================================
+\section{Objetivos y alcance}
+
+\subsection{Lo que se podrá hacer}
+\begin{enumerate}[leftmargin=*]
+  \item \textbf{Armar}: tomar piezas del catálogo (las mismas de la web), moverlas, girarlas y encajarlas en la
+        retícula de 10\,mm del kit.
+  \item \textbf{Unir}: pasar un \emph{tornillo}, que es una pieza aparte, por agujeros alineados de dos o más piezas,
+        y ponerle o no una \emph{tuerca}, fija o floja.
+  \item \textbf{Simular}: con gravedad siempre presente, ver caer, balancear, girar y transmitir movimiento.
+  \item \textbf{Transmitir}: ruedas que se tocan, de lado o de forma transversal, y bandas elásticas entre poleas.
+  \item \textbf{Actuar}: girar una manivela, empujar, arrastrar o soltar piezas.
+  \item \textbf{Medir y explicar}: velocidades angulares, relaciones de transmisión, tensiones, energía; botón
+        «Ver las cuentas», como en la balanza de la web.
+  \item \textbf{Guardar y compartir} un montaje, y llevarlo a realidad aumentada.
+\end{enumerate}
+
+\subsection{Lo que no se hará (por ahora)}
+Deformación de vigas y pletinas (se tratan como sólidos rígidos), electrónica y motores eléctricos (fase
+posterior, para los robots electromecánicos), y fluidos.
+
+\begin{decision}{Principio de diseño}
+La física no es decorativa. Cada fenómeno tiene un modelo explícito (este documento), parámetros con unidades que
+se pueden \emph{medir en el aula} con el kit real, y una prueba con resultado analítico conocido. Así el simulador
+sirve para enseñar: lo que se ve en pantalla se puede explicar con las mismas ecuaciones.
+\end{decision}
+
+% ==========================================================================================
+\section{Método de trabajo: estudiar, discretizar, programar}\label{sec:metodo}
+
+Cada módulo del simulador (sección~\ref{sec:modulos}) sigue el mismo ciclo de cinco pasos:
+
+\begin{enumerate}[leftmargin=*]
+  \item \textbf{Estudiar.} Una \emph{ficha de estudio} en LaTeX con la teoría del módulo, las lecturas precisas
+        (capítulos y secciones de la bibliografía) y ejercicios a mano. El módulo no avanza hasta poder responder sus
+        \emph{preguntas de control}.
+  \item \textbf{Discretizar.} Pasar de las ecuaciones continuas a un algoritmo: qué se guarda en memoria, qué se
+        aproxima, con qué error y con qué estabilidad. Se escribe en la misma ficha, en pseudocódigo.
+  \item \textbf{Probar primero.} Antes de programar, se escriben las pruebas: identidades algebraicas y resultados
+        analíticos que el código debe reproducir (sección~\ref{sec:verificacion}).
+  \item \textbf{Programar.} Se implementa en JavaScript, sin librerías de física. Cada función lleva en su comentario
+        la ecuación que implementa.
+  \item \textbf{Publicar.} Lo construido se convierte en una función visible para el público, con su «Ver las cuentas».
+\end{enumerate}
+
+\begin{decision}{Qué se construye desde cero y qué no}
+\textbf{Desde cero}: el álgebra (PGA), la cinemática, la dinámica de cuerpo rígido, los integradores, las ligaduras,
+la detección de colisiones, el contacto con fricción, las transmisiones del kit y el análisis del mecanismo.
+\textbf{Se reutiliza}: solo el dibujo (three.js). Pero sus entradas y salidas se reinterpretan: el motor físico
+entrega \emph{motores} de PGA, que un adaptador convierte en matrices para dibujar; el cursor y el dedo llegan como
+\emph{rectas} de PGA (el rayo desde la cámara), con las que se eligen y mueven piezas.
+\end{decision}
+
+% ==========================================================================================
+\section{Arquitectura}
+
+\subsection{Tecnologías}
+\begin{tabularx}{\linewidth}{@{}l Y@{}}
+\toprule
+\textbf{Capa} & \textbf{Elección y motivo}\\
+\midrule
+Plataforma & Página web estática, igual que el sitio: funciona en computador, tableta y celular, sin instalar nada.\\
+Gráficos & three.js 0.169 (ya usado), con los modelos GLB de las piezas que ya existen.\\
+Núcleo físico & Propio, en JavaScript y formulado en PGA: cuerpos rígidos, integradores, ligaduras, colisiones y
+  contacto con fricción.\\
+Capa del kit & Grafo de ensamble, tornillos y tuercas, cuerpos compuestos, ruedas de fricción y bandas
+  elásticas.\\
+Análisis & Grados de libertad, ejes, coordenadas generalizadas, lagrangiano reducido y trabajo virtual.\\
+Pruebas & \texttt{node --test} (incluido en Node 22) y navegador sin interfaz para las pruebas visuales.\\
+Interfaz & HTML y CSS con el estilo de la web; controles táctiles.\\
+\bottomrule
+\end{tabularx}
+
+\begin{decision}{¿Por qué un motor propio?}
+Porque el objetivo no es solo tener un simulador, sino entender cada línea. Un motor existente (como Rapier) sería
+más rápido de integrar, pero sería una caja negra. El precio es tiempo: el contacto con fricción es la parte más
+difícil y se le reserva un módulo completo. Como respaldo, si un módulo se atasca, se puede usar temporalmente la
+detección de colisiones de una librería y seguir con lo demás.
+\end{decision}
+
+\subsection{Carpetas del código}
+\begin{tabularx}{\linewidth}{@{}l Y@{}}
+\toprule
+\texttt{nucleo/pga.js} & Álgebra geométrica proyectiva: multivectores, productos, motores, exponencial y logaritmo.\\
+\texttt{nucleo/cuerpo.js} & Cuerpo rígido: motor, velocidad, inercia, fuerzas (forques).\\
+\texttt{nucleo/integrador.js} & Avance en el tiempo sobre el grupo de movimientos rígidos.\\
+\texttt{nucleo/ligaduras.js} & Uniones (revolución, cilíndrica, fija) y su solución.\\
+\texttt{nucleo/colision.js} & Formas de colisión y detección (SAT, GJK).\\
+\texttt{nucleo/contacto.js} & Contacto unilateral con fricción de Coulomb.\\
+\texttt{kit/} & Catálogo con puertos, ensamble, tornillos y tuercas, cuerpos compuestos, ruedas y bandas.\\
+\texttt{analisis/} & Grados de libertad, ejes, lagrangiano reducido, trabajo virtual.\\
+\texttt{app/} & La cara pública: escena, interfaz, instrumentos, adaptador PGA $\leftrightarrow$ three.js.\\
+\texttt{pruebas/} & Pruebas automáticas de cada módulo.\\
+\texttt{estudio/} & Fichas de estudio (LaTeX), una por módulo.\\
+\bottomrule
+\end{tabularx}
+
+\subsection{Ciclo de cada cuadro}
+\begin{equation*}
+\text{entrada} \;\to\; \text{ensamble (si cambió)} \;\to\; \text{cuerpos} \;\to\;
+\underbrace{\text{fuerzas} \to \text{velocidades} \to \text{ligaduras y contactos} \to \text{motores}}_{n \text{ subpasos}} \;\to\; \text{instrumentos} \;\to\; \text{dibujo}
+\end{equation*}
+
+% ==========================================================================================
+\section{Notación, unidades y piezas}
+
+\subsection{Notación}
+Vectores en negrita ($\vect{x}$), matrices en mayúscula recta ($\R$, $\I$). Cada cuerpo $B$ tiene posición del centro
+de masa $\vect{x}_B$, orientación $\R_B\in SO(3)$ (en el código, un cuaternión $q_B$), velocidad $\vect{v}_B$ y
+velocidad angular $\vect{\omega}_B$. Un punto con coordenadas locales $\vect{r}$ está en
+$\vect{p} = \vect{x}_B + \R_B\vect{r}$ y se mueve con $\dot{\vect{p}} = \vect{v}_B + \vect{\omega}_B\times\R_B\vect{r}$.
+$\skw{a}$ es la matriz tal que $\skw{a}\vect{b} = \vect{a}\times\vect{b}$.
+
+\subsection{Unidades y escala}
+Las piezas miden milímetros y pesan gramos. Los motores físicos tienen tolerancias pensadas para metros, así que se
+simula en \textbf{centímetros}, gramos y segundos (CGS):
+\begin{equation}
+  g = 981\ \mathrm{cm\,s^{-2}},\qquad 1\ \mathrm{N} = 10^{5}\ \mathrm{g\,cm\,s^{-2}},\qquad
+  1\ \mathrm{N\,m} = 10^{7}\ \mathrm{g\,cm^{2}\,s^{-2}},
+\end{equation}
+para que las magnitudes típicas sean de orden 1 y los cálculos estén bien condicionados. Toda magnitud que se
+muestra en pantalla se convierte a SI.
+La gravedad es $\vect{g} = (0,-g,0)$, \textbf{siempre activa}.
+
+\subsection{Pieza}\label{sec:piezas}
+Una pieza $P$ es un sólido rígido con:
+\begin{itemize}[leftmargin=*]
+  \item Malla visual (los GLB actuales) y forma de colisión: unión de primitivas (cajas, cilindros) o envolventes
+        convexas; nunca la malla con agujeros, que es costosa e inestable.
+  \item Material $\mathcal{M}$ (plástico, metal, caucho) con densidad $\rho$, coeficientes de fricción y restitución.
+  \item Masa $m = \rho V$, centro de masa $\vect{c}$ e inercia $\I$, calculados de la malla cerrada (la herramienta
+        \texttt{manifold3d} da $V$ exacto). En un cilindro sólido, por ejemplo,
+        $I_{\text{eje}} = \tfrac12 m R^2$ e $I_{\perp} = \tfrac1{12} m(3R^2 + h^2)$.
+  \item Un conjunto de \textbf{puertos} $\{(\vect{o}_k, \vect{a}_k, d_k, \ell_k)\}$: cada agujero tiene centro
+        $\vect{o}_k$, eje unitario $\vect{a}_k$, diámetro $d_k = 4{,}6$\,mm y largo $\ell_k$. Los tornillos tienen un
+        puerto macho de diámetro $4{,}0$\,mm, y las tuercas uno roscado.
+\end{itemize}
+
+\begin{decision}{Medir en lugar de suponer}
+La densidad real del plástico, la masa de cada pieza y los coeficientes de fricción se miden con el kit, con una
+báscula de cocina y un plano inclinado (sección~\ref{sec:calibracion}). Mientras tanto se usan valores típicos: plástico
+$\rho\approx1{,}05\ \mathrm{g/cm^3}$, acero $\rho = 7{,}85\ \mathrm{g/cm^3}$.
+\end{decision}
+
+% ==========================================================================================
+\section{Geometría y cinemática en álgebra geométrica proyectiva}\label{sec:pga}
+
+\subsection{El álgebra}
+Se usa el álgebra de Clifford $\mathbb{R}_{3,0,1}$, generada por $e_0, e_1, e_2, e_3$ con
+\begin{equation}
+  e_0^2 = 0,\qquad e_1^2 = e_2^2 = e_3^2 = 1,\qquad e_ie_j = -e_je_i\ (i\neq j).
+\end{equation}
+Un multivector tiene $2^4 = 16$ componentes, repartidas en grados 0 a 4. El producto geométrico $ab$ se descompone en
+partes de grado definido; de él salen el producto exterior $\wedge$ (unir subespacios), el interior $\cdot$ (proyectar,
+medir ángulos), el regresivo $\vee$ (\emph{join} de elementos) y el conmutador $a\times b = \tfrac12(ab - ba)$. La
+pseudoescalar es $\mathbf{I} = e_{0123}$.
+
+\subsection{Elementos geométricos}
+\begin{tabularx}{\linewidth}{@{}l l Y@{}}
+\toprule
+\textbf{Objeto} & \textbf{Grado} & \textbf{Forma}\\
+\midrule
+Plano $ax + by + cz + d = 0$ & 1 & $a e_1 + b e_2 + c e_3 + d e_0$\\
+Recta (eje, agujero) & 2 & bivector: parte euclídea (dirección) más parte ideal (momento); coordenadas de Plücker\\
+Punto $(x,y,z)$ & 3 & $e_{123} + x\,e_{032} + y\,e_{013} + z\,e_{021}$\\
+\bottomrule
+\end{tabularx}
+
+\medskip
+La recta que pasa por dos puntos es $P\vee Q$; la intersección de dos planos es $p\wedge q$. Los \emph{puertos} de las
+piezas (sección~\ref{sec:piezas}) se representan como rectas: un agujero \emph{es} su eje.
+
+\subsection{Movimientos rígidos: motores}
+Todo desplazamiento rígido es un \emph{motor} $M$ (un elemento del subálgebra par con $M\widetilde{M} = 1$), que actúa
+sobre cualquier elemento por el producto «sándwich»
+\begin{equation}
+  X' = M\,X\,\widetilde{M},
+\end{equation}
+y dos movimientos seguidos se componen multiplicando: $M_{21} = M_2M_1$. Los cuaterniones son exactamente los motores
+sin traslación. Por el teorema de Chasles, todo motor es un movimiento de \textbf{tornillo}: un giro $\theta$
+alrededor de una recta $L$ (normalizada, $L^2 = -1$) combinado con un avance $d$ a lo largo de ella,
+\begin{equation}
+  M = \exp\!\Bigl(-\tfrac12\,(\theta + d\,\mathbf{I})\,L\Bigr),
+\end{equation}
+(con la convención de signos de Dorst y De Keninck~\cite{dorst-dekeninck}). El logaritmo recupera el eje, el ángulo y
+el avance: es la manera natural de \emph{identificar el eje de un movimiento}.
+
+\subsection{Velocidad: el tornillo instantáneo}
+Si un cuerpo tiene motor $M(t)$, su velocidad es un bivector $\Omega$:
+\begin{equation}
+  \dot M = -\tfrac12\,M\,\Omega_{\text{c}} = -\tfrac12\,\Omega_{\text{e}}\,M,\qquad \Omega_{\text{e}} = M\,\Omega_{\text{c}}\,\widetilde{M},
+\end{equation}
+en el marco del cuerpo ($\Omega_{\text{c}}$) o del espacio ($\Omega_{\text{e}}$). $\Omega$ reúne velocidad angular y
+lineal en un solo objeto, y su recta asociada es el \textbf{eje instantáneo de tornillo}: el simulador puede dibujar
+alrededor de qué recta está girando cada pieza en cada instante.
+
+\subsection{Alineación de agujeros, en PGA}
+Para dos rectas normalizadas $L_1$, $L_2$, el producto $L_1L_2$ tiene parte escalar $-\cos\alpha$ y parte de grado 4
+proporcional a $d\sin\alpha\,\mathbf{I}$, donde $\alpha$ es el ángulo entre ellas y $d$ su distancia mínima. Si son
+paralelas, la distancia sale de la parte ideal de su conmutador. Así, la condición de alineación de la
+sección~\ref{sec:ensamble} se reduce a medir $L_1L_2$.
+
+\subsection{Dinámica en PGA}
+La inercia es una aplicación lineal $\mathcal{A}$ de bivectores (velocidades) en bivectores duales (momentos): el
+\emph{momento} $P = \mathcal{A}[\Omega]$ es una recta, la recta del momento, que reúne momento lineal y angular. Las
+ecuaciones de Newton y Euler quedan en una sola, en el marco del cuerpo~\cite{dorst-dekeninck, gunn-tesis}:
+\begin{equation}
+  \dot\Omega_{\text{c}} = \mathcal{A}^{-1}\!\bigl[\,F_{\text{c}} - \Omega_{\text{c}}\times\mathcal{A}[\Omega_{\text{c}}]\,\bigr],
+\end{equation}
+donde $F$ es el \emph{forque} (fuerza y par juntos, también una recta: la recta de acción de la fuerza). La gravedad es
+un forque vertical que pasa por el centro de masa. Sin forques externos, la recta del momento queda fija en el espacio:
+es la conservación conjunta del momento lineal y angular, que se verifica en la prueba P13.
+
+% ==========================================================================================
+\section{Grafo de ensamble: tornillos, tuercas y uniones}\label{sec:ensamble}
+
+\subsection{Definición}
+El montaje es un grafo $G = (\mathcal{P}, \mathcal{U})$: los nodos son piezas (incluidos tornillos y tuercas) y las
+aristas son uniones. Cada unión $u$ tiene un tipo $\tau(u)$ y un estado. El grafo es la «verdad» del montaje; los
+cuerpos de la simulación se derivan de él.
+
+\subsection{Alineación de agujeros}
+Dos puertos $k$ (de la pieza $P$) y $l$ (de $Q$), llevados al mundo, están \emph{alineados} si sus ejes son paralelos y
+coinciden:
+\begin{equation}
+  \lvert \vect{a}_k \times \vect{a}_l \rvert < \varepsilon_a, \qquad
+  \bigl\lvert (\vect{o}_l - \vect{o}_k) - \bigl((\vect{o}_l-\vect{o}_k)\cdot\vect{a}_k\bigr)\vect{a}_k \bigr\rvert < \varepsilon_r,
+\end{equation}
+con $\varepsilon_a \approx \sin 3^\circ$ y $\varepsilon_r \approx 0{,}8$\,mm. Al soltar una pieza cerca de una
+alineación, la interfaz la «imanta» a la posición exacta (ajuste a la retícula).
+
+\subsection{El tornillo es una pieza}
+Un tornillo $S$ se inserta a lo largo de una cadena de puertos alineados $k_1,\dots,k_n$ (en piezas
+$P_1,\dots,P_n$), mientras su largo útil lo permita: $\sum_i \ell_{k_i} \le L_S$. Se forman las aristas
+$(S,P_i)$ de tipo \emph{eje}. Según la tuerca:
+
+\begin{tabularx}{\linewidth}{@{}l l Y@{}}
+\toprule
+\textbf{Estado} & \textbf{Unión de cada pieza con el tornillo} & \textbf{Grados de libertad relativos}\\
+\midrule
+Sin tuerca & cilíndrica & giro y deslizamiento a lo largo del eje (2): el tornillo puede salirse si nada lo
+  detiene, y la gravedad puede sacarlo.\\
+Tuerca floja & de revolución & giro alrededor del eje (1), con fricción pequeña.\\
+Tuerca ajustada & de revolución con fricción & giro solo si el par supera $\tau_f$ (ec.~\ref{eq:tauf}).\\
+Tuerca apretada & fija & ninguno: tornillo, tuerca y piezas forman un cuerpo.\\
+Tuerca fija a una pieza & fija (tuerca–pieza) & la tuerca queda pegada a esa pieza (tuerca «cautiva»).\\
+\bottomrule
+\end{tabularx}
+
+\medskip
+Con tuerca floja, \emph{cada} pieza gira sobre el tornillo. Es lo que permite una biela articulada: dos vigas unidas
+por un tornillo con tuerca floja.
+
+\subsection{Apriete y fricción en la unión}
+Apretar la tuerca con un par $T$ produce una fuerza de sujeción (precarga) $F_p$. Con la relación usual de
+tornillería,
+\begin{equation}
+  T = K\, d\, F_p, \qquad K \approx 0{,}2,
+\end{equation}
+donde $d = 4$\,mm es el diámetro nominal. Las caras en contacto, una corona de radios $r_i$ y $r_o$ con presión
+uniforme, resisten el giro hasta
+\begin{equation}
+  \tau_f = \mu_j\, F_p\, r_m, \qquad\label{eq:tauf} r_m = \frac{2}{3}\,\frac{r_o^3 - r_i^3}{r_o^2 - r_i^2}.
+\end{equation}
+En la simulación, la unión de revolución lleva un motor de velocidad cero con par máximo $\tau_f$: si el par que se le
+aplica es menor, no gira; si es mayor, desliza con fricción cinética. Cuando $\tau_f$ supera cualquier par razonable
+del montaje, la unión se convierte en \emph{fija} y las piezas se fusionan (sección~5). Esto se ve en pantalla: al
+apretar la tuerca, el conjunto cambia de color de contorno y se mueve como un todo.
+
+\subsection{Avance del tornillo}
+Girar la tuerca un ángulo $\Delta\theta$ la desplaza a lo largo del eje
+\begin{equation}
+  \Delta s = p\,\frac{\Delta\theta}{2\pi}, \qquad p = 0{,}7\ \mathrm{mm}\ (\mathrm{M4}),
+\end{equation}
+que se usa para animar el apriete y para saber si la tuerca ya toca la pieza. El apriete solo crece cuando la tuerca
+hace contacto.
+
+% ==========================================================================================
+\section{Cuerpos compuestos}
+
+\subsection{Agrupación}
+Las aristas \emph{fijas} definen una relación de equivalencia entre piezas. Sus clases (componentes conexas del
+subgrafo de uniones fijas, calculadas con \emph{unión–búsqueda}) son los cuerpos rígidos de la simulación: «si las
+junto, cambia el objeto como un todo». Cada vez que se aprieta, afloja, añade o quita algo, se recalculan solo las
+clases afectadas.
+
+\subsection{Propiedades de masa del compuesto}
+Para un cuerpo $B$ formado por piezas $i$ con masas $m_i$, centros $\vect{c}_i$, inercias locales $\I_i$ y
+orientaciones $\R_i$ (respecto al marco de $B$):
+\begin{align}
+  m_B &= \sum_i m_i, \qquad \vect{c}_B = \frac{1}{m_B}\sum_i m_i\,\vect{c}_i,\\
+  \I_B &= \sum_i \Bigl[\R_i\,\I_i\,\R_i^{\mathsf T} + m_i\bigl(\lVert\vect{d}_i\rVert^2\E - \vect{d}_i\vect{d}_i^{\mathsf T}\bigr)\Bigr],
+  \qquad \vect{d}_i = \vect{c}_i - \vect{c}_B,
+\end{align}
+que es el teorema de Steiner (ejes paralelos) en forma tensorial. Al fusionar, el cuerpo nuevo hereda el momento
+lineal y angular total, para que fusionar no cree ni destruya movimiento:
+\begin{equation}
+  \vect{v}_B = \frac{1}{m_B}\sum_i m_i\vect{v}_i, \qquad
+  \vect{\omega}_B = \I_B^{-1}\sum_i\Bigl[\I_i^{\text{mundo}}\vect{\omega}_i + m_i\,\vect{d}_i\times(\vect{v}_i - \vect{v}_B)\Bigr].
+\end{equation}
+La energía cinética sí puede bajar al fusionar (es un choque perfectamente inelástico); se registra como disipación.
+
+\begin{decision}{Ventaja numérica}
+Un tornillo de 2\,g unido a una rueda de 40\,g por una restricción es un sistema mal condicionado (cociente de masas
+grande). Fusionarlos en un cuerpo elimina la restricción y el problema. Por eso fusionar no solo es fiel a la
+realidad: también hace la simulación más estable.
+\end{decision}
+
+% ==========================================================================================
+\section{Dinámica de cuerpo rígido}
+
+Cada cuerpo obedece las ecuaciones de Newton–Euler en el marco del mundo:
+\begin{align}
+  m\,\dot{\vect{v}} &= m\vect{g} + \sum_k \vect{F}_k,\\
+  \I\,\dot{\vect{\omega}} + \vect{\omega}\times\I\vect{\omega} &= \sum_k (\vect{p}_k - \vect{x})\times\vect{F}_k + \sum_j \vect{\tau}_j,
+  \qquad \I = \R\,\I_{\text{local}}\R^{\mathsf T},
+\end{align}
+donde $\vect{F}_k$ son fuerzas aplicadas en puntos $\vect{p}_k$ (contactos, bandas, la mano) y $\vect{\tau}_j$
+pares puros (motores, fricción en uniones). El término giroscópico $\vect{\omega}\times\I\vect{\omega}$ es el que hace
+precesar un trompo hecho con una rueda.
+
+\subsection{Restricciones (uniones)}
+Una unión se escribe como una función $\vect{C}(\vect{q}) = \vect{0}$ sobre las configuraciones de los dos cuerpos.
+Derivando, $\dot{\vect{C}} = \mathbf{J}\vect{u} = \vect{0}$, con $\vect{u} = (\vect{v}_a,\vect{\omega}_a,\vect{v}_b,\vect{\omega}_b)$
+y $\mathbf{J}$ el jacobiano. Para la unión de revolución, con punto de anclaje $\vect{r}_a,\vect{r}_b$ y eje $\vect{e}$:
+\begin{equation}
+  \vect{C}_{\text{punto}} = \vect{x}_a + \R_a\vect{r}_a - \vect{x}_b - \R_b\vect{r}_b = \vect{0}\ (3\ \text{ec.}),\qquad
+  (\R_a\vect{e})\cdot(\R_b\vect{n}_1) = (\R_a\vect{e})\cdot(\R_b\vect{n}_2) = 0\ (2\ \text{ec.}),
+\end{equation}
+donde $\vect{n}_1,\vect{n}_2$ son perpendiculares al eje en $b$. La unión cilíndrica quita una ecuación del punto
+(la del eje) y la fija las impone todas (6). El núcleo resuelve los impulsos $\vect{\lambda}$ con
+\begin{equation}
+  \mathbf{J}\mathbf{M}^{-1}\mathbf{J}^{\mathsf T}\,\vect{\lambda} = -\mathbf{J}\vect{u} - \frac{\beta}{\Delta t}\vect{C},
+\end{equation}
+por Gauss–Seidel proyectado, con $\beta$ la corrección de deriva (estabilización de Baumgarte).
+
+\subsection{Holgura}
+El agujero (4{,}6\,mm) es más ancho que el tornillo (4{,}0\,mm): hay $0{,}3$\,mm de juego radial. En la fase 1 se
+ignora (unión ideal). Si se quiere, se modela después con un límite de distancia en lugar de una unión exacta, para
+que las piezas «bailen» como en la realidad.
+
+% ==========================================================================================
+\section{Contacto y fricción}
+
+\subsection{Ley de Coulomb}
+En cada punto de contacto con normal $\vect{n}$, la fuerza se descompone en normal $F_n\ge 0$ y tangencial
+$\vect{F}_t$, restringida al cono de fricción:
+\begin{equation}
+  \lVert\vect{F}_t\rVert \le \mu_s F_n \quad\text{(adherencia)}, \qquad
+  \vect{F}_t = -\mu_k F_n\,\frac{\vect{v}_t}{\lVert\vect{v}_t\rVert} \quad\text{(deslizamiento)},
+\end{equation}
+con $\vect{v}_t$ la velocidad relativa tangencial. La restitución $e$ fija el rebote:
+$v_n^{+} = -e\,v_n^{-}$.
+
+\subsection{Materiales}
+Entre dos materiales se combinan los coeficientes con la media geométrica, $\mu_{12} = \sqrt{\mu_1\mu_2}$, salvo que la
+tabla dé el par directamente.
+
+\begin{tabularx}{\linewidth}{@{}Y c c c@{}}
+\toprule
+\textbf{Par de materiales} & $\mu_s$ & $\mu_k$ & $e$\\
+\midrule
+plástico–plástico & 0,35 & 0,30 & 0,4\\
+metal–plástico & 0,30 & 0,25 & 0,3\\
+caucho (aro, banda)–plástico & 0,80 & 0,70 & 0,6\\
+cualquiera–mesa (madera) & 0,45 & 0,40 & 0,3\\
+\bottomrule
+\end{tabularx}
+
+\smallskip
+{\small Valores iniciales típicos; se reemplazan por los medidos (sección~\ref{sec:calibracion}).}
+
+\subsection{Detección y solución del contacto}
+Cada pieza tiene una forma de colisión convexa o unión de convexas (cajas, cilindros, cápsulas). La detección se hace
+en dos etapas: una gruesa con cajas alineadas a los ejes, y una fina con el teorema del eje separador (SAT) o con
+GJK y EPA~\cite{ericson, vandenbergen}, que dan la normal, la profundidad y los puntos de contacto. El contacto es una
+ligadura \emph{unilateral} (condición de Signorini: $F_n\ge0$, separación $\ge0$, y su producto nulo), y con la
+fricción de Coulomb forma un problema de complementariedad que se resuelve iterativamente (Gauss–Seidel proyectado,
+con impulsos acumulados~\cite{catto, stewart-trinkle}).
+
+\subsection{Fricción de rodadura}
+Una rueda que rueda sobre la mesa pierde energía por deformación. Se modela con un par opuesto al giro
+$\tau_r = c_r F_n R$, con $c_r \approx 0{,}01$, para que una rueda lanzada termine deteniéndose.
+
+% ==========================================================================================
+\section{Ruedas de fricción}
+
+Dos ruedas que se tocan transmiten movimiento por fricción. La colisión genérica entre cilindros sirve
+para casos sueltos, pero para que la relación de transmisión sea exacta y explicable se usa un modelo propio que se
+activa cuando la capa de ensamble detecta contacto entre dos discos.
+
+\subsection{Condición general de rodadura}
+Sean dos cuerpos $A$ y $B$ que giran alrededor de ejes fijos (a su estructura) con direcciones $\vect{a}$, $\vect{b}$,
+centros $\vect{c}_A$, $\vect{c}_B$ y velocidades angulares $\omega_A\vect{a}$, $\omega_B\vect{b}$. En el punto de
+contacto $\vect{P}$, con tangente común $\vect{t}$, las velocidades de cada superficie son
+\begin{equation}
+  \vect{v}_A(\vect{P}) = \omega_A\,\vect{a}\times(\vect{P}-\vect{c}_A), \qquad
+  \vect{v}_B(\vect{P}) = \omega_B\,\vect{b}\times(\vect{P}-\vect{c}_B).
+\end{equation}
+Rodar sin deslizar significa que la velocidad relativa tangencial es nula:
+\begin{equation}
+  s \equiv \bigl(\vect{v}_A(\vect{P}) - \vect{v}_B(\vect{P})\bigr)\cdot\vect{t} = 0 .
+\end{equation}
+
+\subsection{Caso paralelo (canto con canto)}
+Ejes paralelos, ruedas de radios $R_A$, $R_B$ tocándose por el borde:
+\begin{equation}
+  \omega_A R_A = -\,\omega_B R_B \quad\Longrightarrow\quad i = \frac{\omega_B}{\omega_A} = -\frac{R_A}{R_B}.
+\end{equation}
+El signo menos indica que giran en sentidos opuestos (el sistema de dos ruedas de la cartilla, con $i=-1/3$).
+
+\subsection{Caso transversal (canto contra cara)}
+Una rueda $A$ de radio $R$ apoya su canto sobre la \emph{cara} de un disco $B$, con ejes perpendiculares, a una
+distancia $r$ del eje de $B$. Ahora la velocidad de la superficie de $B$ en el contacto es $\omega_B r$, y
+\begin{equation}
+  \boxed{\;\omega_A R = \omega_B\, r \quad\Longrightarrow\quad \frac{\omega_A}{\omega_B} = \frac{r}{R}\;}
+\end{equation}
+La relación \textbf{depende de dónde está el contacto}: si se corre la rueda pequeña hacia el borde del disco, gira
+más rápido; si se acerca al centro, más lento; y al pasar al otro lado del centro, invierte el sentido. Es una
+transmisión de relación variable continua (como el variador de disco y rueda). El simulador mostrará $r$ y la
+relación en vivo mientras se desliza la rueda.
+
+\subsection{Deslizamiento}
+El contacto transmite como máximo la fuerza tangencial $\mu_s N$, donde $N$ es la fuerza normal (del peso, de una
+banda que empuja la rueda contra el disco o de la sujeción). Entonces el par máximo sobre el disco es
+\begin{equation}
+  \tau_{B,\max} = \mu_s N\, r .
+\end{equation}
+Si se pide más, la rueda patina, y la fuerza pasa a ser cinética. Para evitar la discontinuidad del signo se usa
+una versión regularizada:
+\begin{equation}
+  F_t = -\mu_k N \tanh\!\left(\frac{s}{s_0}\right),\qquad s_0 \approx 0{,}5\ \mathrm{mm/s},
+\end{equation}
+aplicada como fuerzas iguales y opuestas en $\vect{P}$ sobre $A$ y $B$ (tercera ley), que producen pares
+$\vect{\tau}_A = (\vect{P}-\vect{c}_A)\times F_t\vect{t}$ y $\vect{\tau}_B = -(\vect{P}-\vect{c}_B)\times F_t\vect{t}$.
+
+\subsection{Pérdida por pivoteo}
+En el caso transversal, el contacto no es un punto sino una franja de ancho $w$ (el grosor de la rueda) a lo largo
+del radio del disco. Sus extremos, en $r\pm w/2$, se mueven a $\omega_B(r\pm w/2)$ pero la rueda solo puede igualar
+una velocidad. Con presión uniforme, el deslizamiento medio es $\overline{\lvert\Delta v\rvert} = \omega_B w/4$, y se
+disipa una potencia
+\begin{equation}
+  P_{\text{pivoteo}} \approx \mu_k N\,\frac{\omega_B\, w}{4},
+\end{equation}
+que explica por qué esta transmisión calienta y desgasta más que la de canto con canto, y por qué conviene una rueda
+delgada.
+
+% ==========================================================================================
+\section{Bandas elásticas}
+
+\subsection{Elasticidad del caucho}
+Una banda de longitud natural $L_0$, estirada hasta $L$, ejerce una tensión
+\begin{equation}
+  T = \begin{cases} k\,(L - L_0) + c\,\dot L, & L > L_0,\\ 0, & L \le L_0 \ \text{(floja)},\end{cases}
+  \qquad k = \frac{E A}{L_0},
+\end{equation}
+con $E$ el módulo de Young del caucho ($\sim 1$--$3$\,MPa), $A$ el área de su sección y $c$ un amortiguamiento
+pequeño (el caucho disipa al estirarse y recogerse: histéresis). Para estiramientos grandes ($L > 2L_0$) el caucho
+se endurece; si hace falta, se usa la ley neo-Hookeana $T = \tfrac{EA}{3}\bigl(\lambda - \lambda^{-2}\bigr)$, con
+$\lambda = L/L_0$. La constante $k$ de cada banda se mide colgándole pesas (sección~\ref{sec:calibracion}).
+
+\subsection{Banda libre entre dos puntos}
+Si la banda une dos puntos $\vect{p}_1$, $\vect{p}_2$ (un gancho y un tornillo, una honda), aplica fuerzas iguales y
+opuestas a lo largo de la recta:
+\begin{equation}
+  \vect{F}_1 = T\,\frac{\vect{p}_2 - \vect{p}_1}{\lVert\vect{p}_2 - \vect{p}_1\rVert} = -\vect{F}_2,
+  \qquad L = \lVert\vect{p}_2 - \vect{p}_1\rVert .
+\end{equation}
+
+\subsection{Banda sobre dos poleas}
+Poleas de radios $R_1 \ge R_2$ con centros a distancia $D$. Con la banda abierta (sin cruzar), la geometría da
+\begin{equation}
+  \beta = \arcsin\frac{R_1 - R_2}{D}, \qquad
+  L = 2\sqrt{D^2 - (R_1-R_2)^2} + R_1(\pi + 2\beta) + R_2(\pi - 2\beta),
+\end{equation}
+y ángulos abrazados $\theta_1 = \pi + 2\beta$ y $\theta_2 = \pi - 2\beta$. Con la banda cruzada (las poleas giran en
+sentidos opuestos):
+\begin{equation}
+  \beta_\times = \arcsin\frac{R_1 + R_2}{D}, \qquad
+  L_\times = 2\sqrt{D^2 - (R_1+R_2)^2} + (R_1 + R_2)(\pi + 2\beta_\times).
+\end{equation}
+Para más de dos poleas, $L$ es la suma de tramos tangentes y arcos abrazados, calculados en el plano de las poleas.
+La precarga es $T_0 = k(L - L_0)$: mover las poleas para alejarlas tensa la banda.
+
+\subsection{Transmisión y deslizamiento}
+Sin deslizamiento, $\omega_1 R_1 = \omega_2 R_2$ (abierta) u $\omega_1 R_1 = -\omega_2 R_2$ (cruzada). Al transmitir un
+par $\tau$, un tramo se tensa y el otro se afloja. Si la longitud total se conserva y el caucho es lineal,
+\begin{equation}
+  T_1 = T_0 + \frac{\tau}{2R}, \qquad T_2 = T_0 - \frac{\tau}{2R}.
+\end{equation}
+La banda no resbala mientras se cumpla la ecuación de Euler–Eytelwein (del cabrestante) en la polea con menor ángulo
+abrazado:
+\begin{equation}
+  \frac{T_1}{T_2} \le e^{\mu\theta},
+\end{equation}
+de donde sale el par máximo que la banda puede transmitir:
+\begin{equation}
+  \boxed{\;\tau_{\max} = 2\,T_0\,R\;\frac{e^{\mu\theta}-1}{e^{\mu\theta}+1}\;}\label{eq:taumax}
+\end{equation}
+Más tensión inicial o más ángulo abrazado permiten más par; por eso una banda floja patina.
+
+\subsection{Modelo dinámico}
+La banda se representa como un acople elástico entre los ángulos $\varphi_1$, $\varphi_2$ de las poleas, con la
+diferencia de tensiones
+\begin{equation}
+  T_1 - T_2 = k_e\,\bigl(R_1\varphi_1 - R_2\varphi_2 - \delta\bigr) + c_e\,\bigl(R_1\omega_1 - R_2\omega_2\bigr),
+  \qquad k_e = \frac{2k L_0}{L_{\text{tramo}}},
+\end{equation}
+donde $\delta$ es el deslizamiento acumulado. Si $\lvert T_1 - T_2\rvert$ supera el límite del cabrestante, se satura en
+ese valor y $\delta$ avanza: la banda patina. Cada polea recibe el par $\mp R_i(T_1 - T_2)$ y su eje la fuerza
+$(T_1 + T_2)$ hacia la otra polea. Así se ven, con el mismo modelo, la transmisión normal, el arranque elástico y el
+deslizamiento.
+
+% ==========================================================================================
+\section{Análisis del mecanismo: mecánica analítica}\label{sec:analitica}
+
+La simulación avanza con ligaduras resueltas por impulsos. La mecánica analítica se usa en paralelo para
+\emph{entender, contar y explicar} el mecanismo armado, y como verificación.
+
+\subsection{Configuración y ligaduras}
+Un montaje con $N$ cuerpos tiene configuración $(M_1,\dots,M_N)$, un punto de $SE(3)^N$, de dimensión $6N$. Las
+uniones imponen ligaduras $\vect{C}(\vect{q}) = \vect{0}$, y sus velocidades admisibles cumplen
+$\mathbf{J}\,\vect{u} = \vect{0}$.
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Holónomas}: se pueden escribir como relación entre posiciones (uniones, dos ruedas con ejes fijos:
+        $R_A\varphi_A + R_B\varphi_B = \text{cte}$, que es integrable).
+  \item \textbf{No holónomas}: solo entre velocidades, no integrables (una rueda que rueda libre sobre la mesa).
+\end{itemize}
+
+\subsection{Grados de libertad y ejes}
+El número de grados de libertad es
+\begin{equation}
+  \text{GDL} = 6N - \operatorname{rango}\mathbf{J},
+\end{equation}
+calculado numéricamente con una descomposición en valores singulares de $\mathbf{J}$. La fórmula de
+Grübler–Kutzbach, $\text{GDL} = 6(n - 1 - j) + \sum_i f_i$ (con $n$ eslabones incluido el fijo, $j$ uniones y $f_i$
+los grados de libertad de cada una), sirve como contraste: cuando no coinciden, hay \emph{ligaduras redundantes} (el
+montaje está sobrerrestringido), y el simulador lo dice. Los vectores del núcleo de $\mathbf{J}$ son los movimientos
+posibles; cada uno es un bivector por cuerpo, es decir, un \textbf{eje de giro} que se puede dibujar. En pantalla:
+«este montaje tiene 1 grado de libertad: todo depende del ángulo de la manivela», o «0: está trabado».
+
+\subsection{Coordenadas generalizadas y lagrangiano reducido}
+En un mecanismo de un grado de libertad, todo depende de una coordenada $q$ (el ángulo de la manivela). Con
+$\Omega_i = \vect{\xi}_i(q)\,\dot q$, la energía cinética y la potencial son
+\begin{equation}
+  T = \tfrac12\,\mathcal{M}(q)\,\dot q^{\,2},\qquad \mathcal{M}(q) = \sum_i \xi_i(q)\vee\mathcal{A}_i[\xi_i(q)],\qquad
+  V(q) = \sum_i m_i\,g\,y_i(q),
+\end{equation}
+y la ecuación de Euler–Lagrange da la ecuación de movimiento del mecanismo entero:
+\begin{equation}
+  \mathcal{M}(q)\,\ddot q + \tfrac12\,\mathcal{M}'(q)\,\dot q^{\,2} + V'(q) = Q,
+\end{equation}
+con $Q$ la fuerza generalizada (el par en la manivela). $\mathcal{M}(q)$ es la \emph{inercia efectiva}: explica por
+qué la biela-manivela se siente «más pesada» en ciertos ángulos.
+
+\subsection{Trabajo virtual y ventaja mecánica}
+En equilibrio, el trabajo virtual de las fuerzas aplicadas es nulo para todo desplazamiento admisible:
+$\sum_k F_k\vee\delta\Lambda_k = 0$. De ahí salen, sin dibujar fuerzas internas, el equilibrio de la balanza
+($m_1x_1 = m_2x_2$) y la ventaja mecánica de cualquier transmisión,
+$\tau_{\text{sal}}/\tau_{\text{ent}} = \delta\theta_{\text{ent}}/\delta\theta_{\text{sal}}$.
+
+\subsection{Fuerzas de ligadura}
+Los multiplicadores de Lagrange $\vect{\lambda}$ que calcula el núcleo son las fuerzas que soporta cada unión. En PGA
+cada una es un forque (una recta de fuerza). El simulador puede mostrarlas como flechas: «este tornillo soporta
+0{,}3\,N».
+
+% ==========================================================================================
+\section{Interacción}\label{sec:interaccion}
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Arrastrar una pieza}: la mano es un resorte amortiguado entre el cursor $\vect{m}$ y el punto tomado
+        $\vect{p}$: $\vect{F} = k_m(\vect{m} - \vect{p}) - c_m\dot{\vect{p}}$, con $c_m = 2\sqrt{k_m m}$ (amortiguamiento
+        crítico) y fuerza limitada, para que la mano no atraviese ni rompa nada.
+  \item \textbf{Manivela}: un motor en la unión de revolución que sigue la velocidad que pide el dedo, con par máximo
+        $\tau_{\text{mano}}$. Si el mecanismo se traba, la manivela no gira; no se fuerza.
+  \item \textbf{Herramientas}: llave para apretar o aflojar tuercas (sección~4), banda elástica (se tiende tocando
+        poleas o puntos), regla para medir, cronómetro.
+  \item \textbf{Modos}: \emph{armar} (física en pausa, piezas imantadas a la retícula) y \emph{simular} (física
+        activa). Se puede pausar, avanzar cuadro a cuadro y ver en cámara lenta.
+\end{itemize}
+
+% ==========================================================================================
+\section{Integración numérica y estabilidad}\label{sec:integracion}
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Paso}: el dibujo va a 60 cuadros por segundo; la física avanza con $\Delta t = 1/60$\,s dividido en
+        $n = 4$ a $8$ subpasos, es decir, $\Delta t_{\text{sub}} \approx 2$--$4$\,ms. Se avanza con Euler semiimplícito
+        sobre el grupo: primero la velocidad, $\Omega_{k+1} = \Omega_k + \Delta t\,\dot\Omega_k$, y luego el motor con
+        la exponencial, $M_{k+1} = M_k\exp\!\bigl(-\tfrac{\Delta t}{2}\Omega_{k+1}\bigr)$, que mantiene $M$ como
+        movimiento rígido exacto (sin renormalizar)~\cite{hairer, iserles}.
+  \item \textbf{Resortes} (bandas, mano): un resorte explícito de rigidez $k$ sobre una masa efectiva $m$ es estable si
+        $\omega_n\,\Delta t_{\text{sub}} < 2$, con $\omega_n = \sqrt{k/m}$. Las bandas muy rígidas o muy livianas se
+        tratan de forma implícita, o con la formulación XPBD de rigidez compatible~\cite{xpbd}.
+  \item \textbf{Velocidades altas}: detección continua de colisiones para piezas pequeñas y rápidas (tornillos que caen).
+  \item \textbf{Reposo}: los cuerpos quietos «duermen» para ahorrar cálculo, y despiertan al tocarlos.
+  \item \textbf{Energía}: se lleva la cuenta $E = \sum(\tfrac12 m v^2 + \tfrac12\vect{\omega}\cdot\I\vect{\omega} + m g y)
+        + \sum\tfrac12 k (L-L_0)_+^2$ y lo disipado por fricción. Sin fricción, $E$ debe conservarse (prueba P2).
+\end{itemize}
+
+% ==========================================================================================
+\section{Calibración con el kit real}\label{sec:calibracion}
+
+\begin{tabularx}{\linewidth}{@{}l Y l@{}}
+\toprule
+\textbf{Parámetro} & \textbf{Experimento} & \textbf{Fórmula}\\
+\midrule
+Masa de cada pieza & Pesar 10 piezas iguales en una báscula de cocina y dividir. & $m = M/10$\\
+Fricción estática & Plano inclinado: subir el ángulo hasta que la pieza empieza a deslizar. & $\mu_s = \tan\theta_c$\\
+Fricción cinética & Plano más inclinado: medir el tiempo $t$ en recorrer $d$ desde el reposo. &
+  $\mu_k = \tan\theta - \dfrac{2d}{g t^2\cos\theta}$\\
+Rigidez de banda & Colgar pesas $m_j$ y medir el estiramiento $x_j$; ajustar una recta. & $k = \dfrac{\Delta(m g)}{\Delta x}$\\
+Fricción en el eje & Péndulo de viga sobre tornillo: contar oscilaciones hasta detenerse. & decaimiento lineal de la amplitud\\
+\bottomrule
+\end{tabularx}
+
+\smallskip
+Estos experimentos son, además, actividades para el aula: los estudiantes miden el kit y alimentan el simulador.
+
+% ==========================================================================================
+\section{Verificación: pruebas con respuesta conocida}\label{sec:verificacion}
+
+Cada fase se acepta solo si sus pruebas pasan, con un error relativo menor al indicado.
+
+\begin{tabularx}{\linewidth}{@{}l Y l c@{}}
+\toprule
+& \textbf{Montaje} & \textbf{Resultado analítico} & \textbf{Tolerancia}\\
+\midrule
+P1 & Tornillo en caída libre durante 0,5\,s & $y = -\tfrac12 g t^2$ & 1\,\%\\
+P2 & Viga colgada de un tornillo, tuerca floja, sin fricción (péndulo físico) &
+  $T = 2\pi\sqrt{I_O/(m g d)}$; $E$ constante & 2\,\%\\
+P3 & Pieza sobre plano inclinado & desliza solo si $\tan\theta > \mu_s$ & exacto\\
+P4 & Balanza de brazos iguales con pesas & equilibrio si $m_1 x_1 = m_2 x_2$ & 2\,\%\\
+P5 & Dos ruedas de canto, $R_A/R_B = 1/3$ & $\omega_B/\omega_A = -1/3$ & 1\,\%\\
+P6 & Rueda sobre la cara de un disco, a radio $r$ & $\omega_A/\omega_B = r/R$ & 2\,\%\\
+P7 & Banda sobre dos poleas, par creciente & patina al llegar a $\tau_{\max}$ (ec.~\ref{eq:taumax}) & 5\,\%\\
+P8 & Apretar la tuerca de dos vigas en movimiento & se conserva el momento angular total & 1\,\%\\
+P9 & Tornillo sin tuerca, eje vertical, pieza invertida & el tornillo se cae por gravedad & cualitativa\\
+P10 & Identidades de PGA: $M\widetilde M = 1$, $\exp(\log M) = M$, composición, sándwich de puntos y rectas & exactas & $10^{-12}$\\
+P11 & Cuerpo libre sin gravedad, con giro inicial & recta del momento fija; energía constante & $10^{-6}$\\
+P12 & Grados de libertad: balanza, biela-manivela, montaje trabado & 1, 1 y 0 & exacto\\
+P13 & Balanza por trabajo virtual y por simulación & mismo equilibrio & 1\,\%\\
+P14 & Lagrangiano reducido frente a simulación completa (biela-manivela) & misma $q(t)$ & 2\,\%\\
+\bottomrule
+\end{tabularx}
+
+\smallskip
+Las pruebas corren solas (sin pantalla) en el navegador sin interfaz, igual que las pruebas actuales de la web, y se
+repiten tras cada cambio.
+
+% ==========================================================================================
+\section{Módulos de estudio y construcción}\label{sec:modulos}
+
+Cada módulo tiene su ficha de estudio, sus pruebas y su función pública.
+
+\medskip
+\noindent\begin{tabularx}{\linewidth}{@{}p{2.1cm} Y Y p{2.3cm}@{}}
+\toprule
+\textbf{Módulo} & \textbf{Estudio} & \textbf{Construcción} & \textbf{Pruebas}\\
+\midrule
+0. Álgebra & Álgebra geométrica: producto geométrico, grados, rotores; luego PGA: planos, rectas, puntos, motores,
+  exponencial y logaritmo~\cite{hestenes-nfcm, doran-lasenby, gunn-dekeninck, dorst-dekeninck, lengyel}. &
+  \texttt{pga.js}; adaptador motor $\to$ matriz de three.js; rayo del cursor como recta; mesa de trabajo. & P10\\
+1. Cinemática & Movimientos rígidos, Chasles, tornillos, velocidad como bivector, teoría de tornillos
+  clásica~\cite{ball, selig, murray, lynch-park}. & Piezas con puertos (rectas), mover, girar, imantar a la retícula,
+  alineación de agujeros. & P10, alineación\\
+2. Dinámica & Newton–Euler, tensor de inercia, Steiner, cuerpo rígido en PGA, integración en grupos de
+  Lie~\cite{goldstein, dorst-dekeninck, gunn-tesis, hairer, iserles}. & \texttt{cuerpo.js}, \texttt{integrador.js};
+  masa e inercia de las piezas; gravedad; caída y giro libre (sin choques). & P1, P11\\
+3. Mecánica analítica I & Ligaduras, coordenadas generalizadas, multiplicadores, holonomía, Grübler, rango del
+  jacobiano~\cite{lanczos, goldstein, arnold, lynch-park}. & Jacobianos de las uniones en PGA; contador de grados de
+  libertad; dibujar los ejes posibles. & P12\\
+4. Ligaduras & Ligaduras dinámicas, potencia virtual en PGA, estabilización, Gauss–Seidel proyectado,
+  XPBD~\cite{hadfield-lasenby, baraff, catto, xpbd, muller-rigid}. & Tornillos, tuercas y sus estados; cuerpos
+  compuestos; fusión con conservación del momento. & P2, P8, P9\\
+5. Contacto & Detección (SAT, GJK, EPA), condición de Signorini, cono de Coulomb, complementariedad, apilamiento
+  estable~\cite{ericson, vandenbergen, stewart-trinkle, catto}. & \texttt{colision.js}, \texttt{contacto.js}; la mesa,
+  choques, apilar piezas. & P3\\
+6. Transmisiones & Rodadura, ruedas de fricción, mecánica de contacto con deslizamiento y pivoteo~\cite{johnson},
+  bandas y cabrestante, elasticidad del caucho~\cite{treloar}. & Ruedas paralelas y transversales; bandas con
+  deslizamiento; manivela. & P5, P6, P7\\
+7. Mecánica analítica II & Lagrangiano reducido, inercia efectiva, trabajo virtual, fuerzas de ligadura,
+  integradores variacionales~\cite{lanczos, marsden-west, doran-lasenby}. & «Ver las cuentas»: la ecuación del
+  mecanismo armado, fuerzas en cada tornillo, ventaja mecánica. & P4, P13, P14\\
+8. Compartir & --- & Guardar y cargar montajes, retos con los 7 prototipos, exportar a realidad aumentada. & ---\\
+\bottomrule
+\end{tabularx}
+
+\begin{decision}{Ritmo}
+Un módulo no se cierra hasta que su ficha está estudiada, sus pruebas pasan y su función pública funciona. Los
+módulos 0 a 2 dan la base (álgebra, cinemática, dinámica); el 5 (contacto) es el más largo y el más difícil.
+\end{decision}
+
+% ==========================================================================================
+\section{Riesgos y decisiones abiertas}
+
+\begin{tabularx}{\linewidth}{@{}Y Y@{}}
+\toprule
+\textbf{Riesgo} & \textbf{Cómo se maneja}\\
+\midrule
+Construir el motor desde cero toma mucho tiempo & Módulos con entregas visibles desde el módulo 0; respaldo con una
+  librería de colisiones solo si el módulo 5 se atasca.\\
+Convenciones de signo en PGA (hay varias en la literatura) & Se fija una (la de Dorst y De Keninck) en la ficha 0 y
+  se verifica con pruebas antes de usarla.\\
+Rendimiento en celulares con muchos cuerpos & Fusión en cuerpos compuestos, formas de colisión simples, reposo
+  automático; límite de piezas en celular.\\
+Inestabilidad con piezas muy livianas o bandas rígidas & Escala CGS, subpasos, resortes implícitos (sección~\ref{sec:integracion}).\\
+Armar en 3D con el dedo es difícil & Imantado a la retícula, giros de 90° con un toque, vista ortogonal opcional.\\
+Parámetros físicos inventados & Calibración con el kit (sección~\ref{sec:calibracion}); todo parámetro visible y editable.\\
+\bottomrule
+\end{tabularx}
+
+\medskip
+\textbf{Decisiones abiertas:}
+\begin{enumerate}[leftmargin=*]
+  \item Nombre del programa (propuesta: \emph{Taller virtual ATA EPE}).
+  \item Si la cara pública vive dentro de la web de la cartilla (\texttt{/taller/}) o en el futuro sitio de ATA EPE
+        Robótica Escolar. Por ahora se desarrolla en \texttt{/taller/}.
+  \item Qué piezas faltan en el catálogo para los prototipos: aros de caucho, poleas, manivela, ganchos, bandas.
+\end{enumerate}
+
+% ==========================================================================================
+\begin{thebibliography}{99}
+\small
+
+\item[] \textbf{Álgebra geométrica y su aplicación a la mecánica}
+\bibitem{hestenes-nfcm} D.~Hestenes, \emph{New Foundations for Classical Mechanics}, 2.ª ed., Kluwer, 1999.
+  La reformulación completa de la mecánica clásica en álgebra geométrica.
+\bibitem{doran-lasenby} C.~Doran y A.~Lasenby, \emph{Geometric Algebra for Physicists}, Cambridge University
+  Press, 2003. Caps.~2--4 (álgebra, mecánica clásica, cuerpo rígido) y 12 (lagrangianos con multivectores).
+\bibitem{dorst-fontijne-mann} L.~Dorst, D.~Fontijne y S.~Mann, \emph{Geometric Algebra for Computer Science},
+  Morgan Kaufmann, 2007.
+\bibitem{lengyel} E.~Lengyel, \emph{Projective Geometric Algebra Illuminated}, Terathon Software, 2024.
+\bibitem{gunn-tesis} C.~Gunn, \emph{Geometry, Kinematics, and Rigid Body Mechanics in Cayley-Klein Geometries},
+  tesis doctoral, TU Berlín, 2011. doi:10.14279/depositonce-3058. Cap.~9: dinámica del cuerpo rígido en PGA.
+\bibitem{gunn-dekeninck} C.~Gunn y S.~De Keninck, \emph{Geometric Algebra for Computer Graphics}, notas del curso,
+  SIGGRAPH 2019.
+\bibitem{dorst-dekeninck} L.~Dorst y S.~De Keninck, \emph{May the Forque Be with You: Dynamics in PGA},
+  v2.6, 2023. \url{https://bivector.net/PGADYN.html}
+\bibitem{hadfield-lasenby} H.~Hadfield y J.~Lasenby, «Constrained dynamics in conformal and projective geometric
+  algebra», en \emph{Advances in Computer Graphics (CGI 2020)}, LNCS, Springer, 2020, pp.~459--471.
+\bibitem{hestenes-fasse} D.~Hestenes y E.~D.~Fasse, «Homogeneous rigid body mechanics with elastic coupling», en
+  L.~Dorst, C.~Doran y J.~Lasenby (eds.), \emph{Applications of Geometric Algebra in Computer Science and
+  Engineering}, Birkhäuser, 2002. doi:10.1007/978-1-4612-0089-5\_19
+\bibitem{clifford} W.~K.~Clifford, «Preliminary sketch of biquaternions», \emph{Proc.\ London Math.\ Soc.} 4 (1873)
+  381--395. El origen histórico de los motores.
+
+\item[] \textbf{Teoría de tornillos y cinemática de mecanismos}
+\bibitem{ball} R.~S.~Ball, \emph{A Treatise on the Theory of Screws}, Cambridge University Press, 1900.
+\bibitem{selig} J.~M.~Selig, \emph{Geometric Fundamentals of Robotics}, 2.ª ed., Springer, 2005.
+\bibitem{murray} R.~M.~Murray, Z.~Li y S.~S.~Sastry, \emph{A Mathematical Introduction to Robotic Manipulation},
+  CRC Press, 1994.
+\bibitem{lynch-park} K.~M.~Lynch y F.~C.~Park, \emph{Modern Robotics: Mechanics, Planning, and Control},
+  Cambridge University Press, 2017. Cap.~2 (grados de libertad, Grübler) y cap.~3 (tornillos).
+\bibitem{featherstone} R.~Featherstone, \emph{Rigid Body Dynamics Algorithms}, Springer, 2008.
+
+\item[] \textbf{Mecánica analítica}
+\bibitem{goldstein} H.~Goldstein, C.~Poole y J.~Safko, \emph{Classical Mechanics}, 3.ª ed., Addison-Wesley, 2002.
+\bibitem{lanczos} C.~Lanczos, \emph{The Variational Principles of Mechanics}, 4.ª ed., Dover, 1986.
+\bibitem{arnold} V.~I.~Arnold, \emph{Mathematical Methods of Classical Mechanics}, 2.ª ed., Springer, 1989.
+\bibitem{landau} L.~D.~Landau y E.~M.~Lifshitz, \emph{Mecánica}, Reverté.
+
+\item[] \textbf{Integración numérica geométrica}
+\bibitem{hairer} E.~Hairer, C.~Lubich y G.~Wanner, \emph{Geometric Numerical Integration}, 2.ª ed., Springer, 2006.
+\bibitem{iserles} A.~Iserles, H.~Munthe-Kaas, S.~Nørsett y A.~Zanna, «Lie-group methods», \emph{Acta Numerica} 9
+  (2000) 215--365.
+\bibitem{marsden-west} J.~E.~Marsden y M.~West, «Discrete mechanics and variational integrators», \emph{Acta
+  Numerica} 10 (2001) 357--514.
+
+\item[] \textbf{Ligaduras, contacto y colisiones}
+\bibitem{baraff} D.~Baraff y A.~Witkin, \emph{Physically Based Modeling}, notas del curso, SIGGRAPH 2001.
+\bibitem{catto} E.~Catto, «Iterative dynamics with temporal coherence», Game Developers Conference, 2005.
+\bibitem{stewart-trinkle} D.~E.~Stewart y J.~C.~Trinkle, «An implicit time-stepping scheme for rigid body dynamics
+  with inelastic collisions and Coulomb friction», \emph{Int.\ J.\ Numer.\ Methods Eng.} 39 (1996) 2673--2691.
+\bibitem{xpbd} M.~Macklin, M.~Müller y N.~Chentanez, «XPBD: position-based simulation of compliant constrained
+  dynamics», \emph{Motion in Games}, 2016.
+\bibitem{muller-rigid} M.~Müller et al., «Detailed rigid body simulation with extended position based dynamics»,
+  \emph{Computer Graphics Forum} 39(8), 2020.
+\bibitem{ericson} C.~Ericson, \emph{Real-Time Collision Detection}, Morgan Kaufmann, 2004.
+\bibitem{vandenbergen} G.~van den Bergen, \emph{Collision Detection in Interactive 3D Environments}, Morgan
+  Kaufmann, 2003.
+
+\item[] \textbf{Contacto, fricción y materiales}
+\bibitem{johnson} K.~L.~Johnson, \emph{Contact Mechanics}, Cambridge University Press, 1985. Rodadura con
+  deslizamiento y pivoteo.
+\bibitem{treloar} L.~R.~G.~Treloar, \emph{The Physics of Rubber Elasticity}, 3.ª ed., Oxford, 1975.
+\end{thebibliography}
+
+\end{document}

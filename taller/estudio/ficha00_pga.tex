@@ -1,0 +1,351 @@
+% Ficha de estudio 0 del Taller virtual ATA EPE: del producto geométrico a la PGA.
+% Compilar:  latexmk -pdf ficha00_pga.tex
+\documentclass[11pt,a4paper]{article}
+\usepackage[spanish,es-noshorthands,es-tabla]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[margin=2.2cm]{geometry}
+\usepackage[table]{xcolor}
+\usepackage{amsmath,amssymb,bm}
+\usepackage{tabularx,array,booktabs}
+\usepackage{enumitem}
+\usepackage{fontawesome5}
+\usepackage[most]{tcolorbox}
+\usepackage[hidelinks]{hyperref}
+\usepackage{listings}
+
+\definecolor{morado}{HTML}{2A1B7E}
+\definecolor{amarillo}{HTML}{FFCF2E}
+\definecolor{rojo}{HTML}{C4142C}
+\definecolor{verde}{HTML}{1F9D55}
+\definecolor{gris}{HTML}{5D5A73}
+
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\renewcommand{\arraystretch}{1.25}
+\setlist{itemsep=1pt,topsep=3pt}
+\numberwithin{equation}{section}
+\lstset{basicstyle=\ttfamily\small,columns=fullflexible,keepspaces=true,frame=single,rulecolor=\color{gris!40},
+  literate={á}{{\'a}}1 {é}{{\'e}}1 {í}{{\'i}}1 {ó}{{\'o}}1 {ú}{{\'u}}1 {ñ}{{\~n}}1}
+
+\newcommand{\rev}[1]{\widetilde{#1}}
+\newcommand{\I}{\mathbf{I}}
+\newtcolorbox{lectura}{colback=morado!5,colframe=morado,fonttitle=\bfseries,title={\faBook~Lecturas}}
+\newtcolorbox{ejercicio}[1]{colback=amarillo!10,colframe=amarillo!80!black,fonttitle=\bfseries,title={\faPencil*~Ejercicio #1}}
+\newtcolorbox{control}{colback=rojo!5,colframe=rojo,fonttitle=\bfseries,title={\faQuestionCircle~Preguntas de control}}
+\newtcolorbox{codigo}{colback=verde!6,colframe=verde,fonttitle=\bfseries,title={\faCode~De la ecuación al código}}
+
+\title{\textcolor{morado}{\textbf{Ficha 0. Del producto geométrico a la PGA}}\\[3pt]
+  \large Taller virtual ATA EPE · Módulo 0: el álgebra}
+\author{}
+\date{29 de octubre de 2026}
+
+\begin{document}
+\maketitle
+\vspace{-1.5em}
+
+\begin{tcolorbox}[colback=morado,colframe=morado,coltext=white,arc=3mm]
+\textbf{\textcolor{amarillo}{Meta del módulo.}} Al terminar, puedes representar planos, rectas y puntos del espacio
+como multivectores, moverlos con motores, componer movimientos, extraer el eje de un movimiento, y tienes
+implementada \texttt{nucleo/pga.js} con todas sus pruebas pasando. Es la base de todo lo demás: cada pieza del kit,
+cada agujero y cada movimiento del simulador se escriben en este lenguaje.
+\end{tcolorbox}
+
+\begin{lectura}
+En este orden (lo esencial en negrita):
+\begin{enumerate}[leftmargin=*]
+  \item \textbf{Hestenes, \emph{New Foundations for Classical Mechanics}, cap.~1 y cap.~2} (§2.1--2.5): de dónde sale
+        el producto geométrico y por qué une el producto punto y el cruz.
+  \item \textbf{Doran y Lasenby, \emph{Geometric Algebra for Physicists}, cap.~2} (§2.1--2.7) y §4.1--4.2: álgebra
+        en 2D y 3D, rotores, y la relación con los cuaterniones.
+  \item \textbf{Gunn y De Keninck, \emph{Geometric Algebra for Computer Graphics} (SIGGRAPH 2019)}, partes sobre PGA:
+        por qué $e_0^2 = 0$, planos como vectores, \emph{meet} y \emph{join}.
+  \item \textbf{Dorst y De Keninck, \emph{May the Forque Be with You}}, §1--3: la convención que usamos, motores,
+        exponencial y logaritmo. (Las secciones de dinámica son para el módulo 2.)
+  \item Dorst, Fontijne y Mann, \emph{Geometric Algebra for Computer Science}, cap.~19: implementación con
+        \emph{bitmaps}, que es la que haremos.
+  \item Opcional: Lengyel, \emph{Projective Geometric Algebra Illuminated}, para otra mirada (usa convenciones
+        distintas: útil para ver que la física no depende de ellas).
+\end{enumerate}
+\end{lectura}
+
+% =================================================================================================
+\section{El producto geométrico}
+
+\subsection{La idea}
+Para dos vectores $a$, $b$ se define un producto asociativo y distributivo que cumple $a^2 = a\cdot a$ (un escalar).
+Desarrollando $(a+b)^2$ se obtiene que $ab + ba = 2\,a\cdot b$, y por tanto
+\begin{equation}
+  ab = a\cdot b + a\wedge b,\qquad a\cdot b = \tfrac12(ab + ba),\qquad a\wedge b = \tfrac12(ab - ba).
+\end{equation}
+La parte simétrica es el producto punto de siempre. La antisimétrica, $a\wedge b$, es un objeto nuevo: un
+\textbf{bivector}, un trozo de plano orientado con área $\lvert a\rvert\lvert b\rvert\sin\theta$. En 3D, el producto
+cruz es el «dual» de $a\wedge b$: el vector perpendicular a ese plano. El bivector es más fundamental, porque existe en
+cualquier dimensión y no depende de la regla de la mano derecha.
+
+\subsection{En una base}
+Con una base ortonormal $e_1,e_2,e_3$: $e_i^2 = 1$ y $e_ie_j = -e_je_i$ si $i\ne j$. Se abrevia $e_{12} = e_1e_2$,
+$e_{123} = e_1e_2e_3$, etc. Por ejemplo,
+\begin{equation}
+  (e_{12})^2 = e_1e_2e_1e_2 = -e_1e_1e_2e_2 = -1 .
+\end{equation}
+Un bivector unitario se comporta como la unidad imaginaria $i$. No es una coincidencia: \emph{los números complejos son
+el álgebra par del plano}, y \emph{los cuaterniones son el álgebra par del espacio}.
+
+\begin{ejercicio}{0.1}
+Calcula $e_1e_2e_1$, $(e_{123})^2$ y $e_{12}e_{23}$. ¿Qué grado tiene cada resultado? Comprueba que
+$e_{23}$, $e_{31}$, $e_{12}$ cumplen las mismas reglas que $i$, $j$, $k$ de Hamilton, salvo un signo: ¿cuál?
+\end{ejercicio}
+
+\subsection{Rotores}
+Si $B$ es un bivector unitario ($B^2 = -1$), la exponencial se calcula como la de Euler:
+\begin{equation}
+  e^{-\frac{\theta}{2}B} = \cos\tfrac{\theta}{2} - B\sin\tfrac{\theta}{2},
+\end{equation}
+y el «sándwich» $x' = R\,x\,\rev{R}$, con $R = e^{-\frac{\theta}{2}B}$ y $\rev{R}$ su \emph{reverso} (invertir el
+orden de los factores), gira el vector $x$ un ángulo $\theta$ en el plano de $B$. El ángulo aparece dividido por dos
+porque $R$ actúa dos veces.
+
+\begin{ejercicio}{0.2}
+Con $R = e^{-\frac{\theta}{2}e_{12}}$, calcula $R\,e_1\,\rev R$ a mano. ¿Hacia dónde gira $e_1$: hacia $e_2$ o hacia
+$-e_2$? Esto fija el sentido de giro de la convención; anótalo, porque lo vas a necesitar en el código.
+\end{ejercicio}
+
+% =================================================================================================
+\section{Álgebras de Clifford en general}
+
+Un álgebra de Clifford $\mathbb{R}_{p,q,r}$ tiene $n = p + q + r$ generadores: $p$ con cuadrado $+1$, $q$ con
+cuadrado $-1$ y $r$ con cuadrado $0$. Sus elementos, los \emph{multivectores}, tienen $2^n$ componentes, una por cada
+subconjunto de generadores (\emph{blade} base). Operaciones que vamos a usar:
+
+\begin{tabularx}{\linewidth}{@{}l l Y@{}}
+\toprule
+\textbf{Operación} & \textbf{Notación} & \textbf{Qué hace}\\
+\midrule
+Grado & $\langle X\rangle_k$ & la parte de grado $k$ (escalar 0, vector 1, bivector 2, \dots)\\
+Reverso & $\rev X$ & invierte el orden de los factores: signo $(-1)^{k(k-1)/2}$ en grado $k$\\
+Involución de grado & $\hat X$ & signo $(-1)^k$\\
+Exterior & $A\wedge B$ & une subespacios; nulo si comparten dirección\\
+Interior & $A\cdot B$ & proyecta, mide ángulos y distancias\\
+Conmutador & $A\times B = \tfrac12(AB - BA)$ & la derivada de un movimiento; aparece en la dinámica\\
+\bottomrule
+\end{tabularx}
+
+% =================================================================================================
+\section{PGA: el álgebra de la geometría euclídea}
+
+\subsection{Por qué un generador con cuadrado cero}
+El álgebra $\mathbb{R}_{3,0,0}$ describe direcciones y giros alrededor del origen, pero no traslaciones. Se agrega un
+cuarto generador $e_0$ con $e_0^2 = 0$: la PGA es $\mathbb{R}_{3,0,1}$. Ese $e_0$ «degenerado» es el plano en el
+infinito, y es lo que permite que las traslaciones sean rotaciones alrededor de rectas en el infinito.
+
+\subsection{Los vectores son planos}
+En la PGA \emph{basada en planos}, el elemento de grado 1 es un plano:
+\begin{equation}
+  p = a\,e_1 + b\,e_2 + c\,e_3 + d\,e_0 \quad\longleftrightarrow\quad ax + by + cz + d = 0 .
+\end{equation}
+Los demás objetos se construyen intersecando planos con el producto exterior (\emph{meet}):
+
+\begin{tabularx}{\linewidth}{@{}l c Y@{}}
+\toprule
+\textbf{Objeto} & \textbf{Grado} & \textbf{Construcción y forma}\\
+\midrule
+Plano & 1 & $a e_1 + b e_2 + c e_3 + d e_0$\\
+Recta & 2 & $p\wedge q$, intersección de dos planos: 6 coordenadas (las de Plücker)\\
+Punto & 3 & $p\wedge q\wedge r$, intersección de tres planos: $e_{123} + x\,e_{032} + y\,e_{013} + z\,e_{021}$\\
+\bottomrule
+\end{tabularx}
+
+\medskip
+El producto regresivo $\vee$ (\emph{join}) hace lo contrario: la recta que pasa por dos puntos es $P\vee Q$ y el plano
+por tres es $P\vee Q\vee R$. Como $e_0^2 = 0$, no hay una pseudoescalar invertible; por eso $\vee$ se define con la
+\emph{dualidad de Poincaré} $J$ (el complemento: cada blade base va a su complemento, con el signo que haga
+$X\wedge J(X) = \I$):
+\begin{equation}
+  A\vee B = J^{-1}\bigl(J(A)\wedge J(B)\bigr).
+\end{equation}
+
+\subsection{Incidencias}
+Un punto $P$ está en un plano $p$ si $p\wedge P = 0$; está en una recta $L$ si $L\vee P = 0$; dos rectas se cortan si
+$L_1\wedge L_2 = 0$. Las condiciones geométricas se vuelven ecuaciones algebraicas sin casos especiales.
+
+\begin{ejercicio}{0.3}
+Escribe los planos $x = 0$, $y = 0$ y $z = 0$. Calcula su meet $e_1\wedge e_2\wedge e_3$: ¿qué punto es? Escribe el
+plano $x = 2$ y calcula su meet con la recta $e_2\wedge e_3$ (el eje $x$). ¿Da el punto $(2,0,0)$?
+\end{ejercicio}
+
+\subsection{Elementos ideales}
+Un punto con coeficiente de $e_{123}$ nulo es un punto en el infinito: una \emph{dirección}. Una recta cuya parte
+euclídea ($e_{12},e_{31},e_{23}$) es nula es una recta en el infinito; elevarla al cuadrado da cero. Estos elementos
+no son un estorbo: son los que hacen funcionar las traslaciones.
+
+% =================================================================================================
+\section{Movimientos: reflexiones, rotores y motores}
+
+\subsection{Todo empieza con una reflexión}
+Para un plano normalizado $a$ ($a^2 = 1$), la reflexión de un plano $x$ en $a$ es $x' = -\,a\,x\,a$; para un elemento
+de grado $k$, $X' = (-1)^k a\,X\,a$. El teorema de Cartan–Dieudonné dice que todo movimiento rígido es composición de a
+lo sumo cuatro reflexiones. Dos casos clave:
+\begin{itemize}[leftmargin=*]
+  \item Dos planos que se cortan formando un ángulo $\varphi$: su producto $ba$ \textbf{gira} un ángulo $2\varphi$
+        alrededor de su recta de intersección.
+  \item Dos planos paralelos a distancia $\delta$: su producto \textbf{traslada} una distancia $2\delta$ en la
+        dirección perpendicular a ellos.
+\end{itemize}
+Un producto de un número par de planos es un \textbf{motor}. Actúa sobre cualquier elemento con el sándwich
+\begin{equation}
+  X' = M\,X\,\rev M,\qquad M\rev M = 1,
+\end{equation}
+sin signos que dependan del grado. Componer movimientos es multiplicar: primero $M_1$, luego $M_2$, da $M_2M_1$.
+
+\begin{ejercicio}{0.4}
+Calcula el producto de los planos paralelos $e_1$ y $e_1 + \delta\,e_0$. Muestra que da $1 + \delta\,e_{01}$ (o con
+el signo opuesto, según el orden). Aplícalo al origen $e_{123}$ con el sándwich: ¿cuánto y hacia dónde se movió? ¿Cuál
+de los dos órdenes del producto traslada hacia $+x$?
+\end{ejercicio}
+
+\subsection{Exponencial: del eje al movimiento}
+Una recta euclídea normalizada cumple $L^2 = -1$, y una ideal cumple $L^2 = 0$. Por eso:
+\begin{align}
+  e^{\alpha L} &= \cos\alpha + L\sin\alpha && (L^2 = -1:\ \text{rotor, giro alrededor de } L),\\
+  e^{\alpha E} &= 1 + \alpha E && (E^2 = 0:\ \text{trasladador}).
+\end{align}
+Un bivector general $B$ no es una recta, pero siempre se descompone como $B = (\theta + d\,\I)\,L$, con $L$ una recta
+normalizada que conmuta con $\I L$. Como $(\I L)^2 = \I^2L^2 = 0$,
+\begin{equation}
+  e^{B} = e^{\theta L}\,e^{d\,\I L} = (\cos\theta + L\sin\theta)(1 + d\,\I L).
+\end{equation}
+Para encontrar $\theta$, $d$ y $L$: elevando al cuadrado, $B^2 = -\theta^2 - 2\theta d\,\I$, así que
+\begin{equation}
+  \theta = \sqrt{-\langle B^2\rangle_0},\qquad d = -\frac{\langle B^2\rangle_4}{2\theta},\qquad
+  L = \frac{1}{\theta}\Bigl(1 - \frac{d}{\theta}\I\Bigr)B,
+\end{equation}
+donde $\langle B^2\rangle_4$ es el coeficiente de $\I$. Si $\theta = 0$, el movimiento es una traslación pura:
+$e^B = 1 + B$. Esto es el \textbf{teorema de Chasles} en forma algebraica: todo movimiento es un tornillo de eje $L$,
+ángulo $2\theta$ y avance $2d$ (con $M = e^{B}$ y la mitad del ángulo en el exponente).
+
+\begin{ejercicio}{0.5}
+Verifica $(\theta L + d\,\I L)^2 = -\theta^2 - 2\theta d\,\I$. Luego, a partir de un motor $M$, deduce cómo recuperar
+$\theta$, $d$ y $L$ (el \emph{logaritmo}). Pista: $\langle M\rangle_0 = \cos\theta$, y la parte de grado 2 de $M$ es
+$\sin\theta\,L$ más términos con $\I$.
+\end{ejercicio}
+
+\subsection{Motor como pose}
+La posición y orientación de cada pieza del kit es un motor $M$: lleva la pieza de su sistema local al mundo. Un
+agujero de la pieza, que en su sistema local es la recta $L_{\text{loc}}$, está en el mundo en
+$M\,L_{\text{loc}}\,\rev M$. La alineación de dos agujeros (plan, sección de PGA) se calcula así, directamente sobre rectas.
+
+\begin{ejercicio}{0.6}
+Construye el motor de una viga que se giró $90^\circ$ alrededor del eje $z$ y luego se trasladó 3\,cm en $x$.
+¿Importa el orden? Calcula $M_{\text{tras}}M_{\text{giro}}$ y $M_{\text{giro}}M_{\text{tras}}$, aplícalos al punto
+$(1,0,0)$ y compara.
+\end{ejercicio}
+
+% =================================================================================================
+\section{De la ecuación al código}
+
+\begin{codigo}
+\textbf{Representación.} Un multivector es un \texttt{Float64Array(16)}. El índice de cada componente es el
+\emph{bitmap} de su blade: el bit 0 es $e_0$, el bit 1 es $e_1$, el bit 2 es $e_2$, el bit 3 es $e_3$. Así,
+$e_{12}$ es el índice $0110_2 = 6$, $e_{013}$ es $1011_2 = 11$ y $\I = e_{0123}$ es $1111_2 = 15$. Siempre en orden
+\emph{ascendente} dentro del blade; los nombres de la literatura como $e_{031}$ o $e_{021}$ se convierten con su signo
+($e_{021} = -e_{012}$).
+\end{codigo}
+
+\subsection{Producto de dos blades base}
+Para blades con bitmaps $a$ y $b$:
+\begin{enumerate}[leftmargin=*]
+  \item El resultado tiene bitmap $a \oplus b$ (o exclusivo): los generadores repetidos se cancelan de a pares.
+  \item El signo de reordenar: cuántos intercambios hacen falta para llevar $e_ae_b$ a orden ascendente. Cada
+        intercambio de dos generadores distintos cambia el signo.
+  \item La métrica: cada generador repetido aporta su cuadrado. Si se repite $e_0$ (bit 0 en $a \,\&\, b$), el
+        producto es cero.
+\end{enumerate}
+
+\begin{lstlisting}
+signo_reordenar(a, b):           # Dorst, Fontijne y Mann, sec. 19.1
+    a = a >> 1; cambios = 0
+    mientras a != 0:
+        cambios += popcount(a & b); a = a >> 1
+    devolver (cambios par) ? +1 : -1
+
+producto_blades(a, b):
+    si (a & b & 1): devolver (0, 0)         # e0 * e0 = 0
+    devolver (a XOR b, signo_reordenar(a, b))
+\end{lstlisting}
+
+El producto geométrico de dos multivectores es la suma de los productos de todas sus componentes:
+$256$ productos de blades. Se precalcula una tabla de $16\times16$ (índice y signo) una sola vez. Más adelante, en el
+módulo 2, se escriben versiones especializadas (motor por motor, sándwich de un punto) por rendimiento, y se
+\emph{prueban contra} el producto general.
+
+\subsection{Lo demás, a partir del producto}
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Grado} de un blade: número de bits en 1. \textbf{Reverso}: multiplicar por $(-1)^{k(k-1)/2}$.
+  \item \textbf{Exterior} $A\wedge B$: el producto de blades solo cuando $a \,\&\, b = 0$.
+  \item \textbf{Dual de Poincaré} $J$: el bitmap $i$ va a $15 - i$, con el signo que haga $e_i\wedge J(e_i) = \I$.
+  \item \textbf{Regresivo} $A\vee B = J^{-1}(J(A)\wedge J(B))$.
+  \item \textbf{Exponencial} de un bivector: la fórmula (4.4) con la descomposición (4.5).
+  \item \textbf{Motor a matriz} para three.js: las columnas son las imágenes, por el sándwich, de las tres
+        direcciones $e_{032}, e_{013}, e_{021}$ y del origen $e_{123}$.
+\end{itemize}
+
+\subsection{Errores numéricos}
+Tras muchas composiciones, $M\rev M$ se aleja de 1 por redondeo. Se renormaliza cada cierto tiempo:
+$M \leftarrow M/\sqrt{\langle M\rev M\rangle_0}$, y se corrige la parte ideal para que $\langle M\rev M\rangle_4 = 0$.
+Las comparaciones nunca son exactas: se usa una tolerancia (en las pruebas, $10^{-12}$).
+
+% =================================================================================================
+\section{Qué programar y cómo se comprueba}
+
+El archivo \texttt{nucleo/pga.js} ya tiene las funciones declaradas, con su documentación y la ecuación que deben
+implementar, y \texttt{pruebas/pga.test.js} tiene las pruebas. El orden sugerido es el de la tabla; cada fila
+desbloquea las pruebas de la siguiente.
+
+\begin{tabularx}{\linewidth}{@{}l Y l@{}}
+\toprule
+\textbf{Función} & \textbf{Qué hace} & \textbf{Ecuación}\\
+\midrule
+\texttt{productoBlades} & índice y signo del producto de dos blades & §5.1\\
+\texttt{gp}, \texttt{suma}, \texttt{escalar} & producto geométrico, suma y producto por escalar & (1.1)\\
+\texttt{grado}, \texttt{reverso} & parte de grado $k$; reverso & §2\\
+\texttt{wedge}, \texttt{dual}, \texttt{vee} & exterior, dualidad de Poincaré, regresivo & (3.2)\\
+\texttt{plano}, \texttt{punto}, \texttt{puntoDe} & construir y leer elementos & (3.1)\\
+\texttt{sandwich} & $M X \rev M$ & (4.1)\\
+\texttt{exp}, \texttt{log} & exponencial y logaritmo de motores & (4.4)--(4.5)\\
+\texttt{rotor}, \texttt{trasladador} & motores de giro (mano derecha) y de traslación & ej.~0.2, 0.4\\
+\texttt{aMatriz} & motor a matriz $4\times4$ de three.js & §5.2\\
+\bottomrule
+\end{tabularx}
+
+\medskip
+Para correr las pruebas, desde la carpeta \texttt{taller}:
+\begin{lstlisting}
+node --test "pruebas/*.test.js"
+\end{lstlisting}
+
+\begin{control}
+Antes de escribir código, deberías poder responder:
+\begin{enumerate}[leftmargin=*]
+  \item ¿Por qué $ab = a\cdot b + a\wedge b$ y qué representa geométricamente cada parte?
+  \item ¿Por qué el ángulo de un rotor aparece dividido por 2?
+  \item ¿Qué representa $e_0$ y por qué su cuadrado es cero? ¿Qué se perdería si fuera $+1$?
+  \item En la PGA basada en planos, ¿por qué el punto es un trivector y no un vector?
+  \item ¿Por qué dos reflexiones en planos paralelos dan una traslación? ¿De cuánto?
+  \item Dado un motor cualquiera, ¿cómo obtienes el eje del tornillo, el ángulo y el avance?
+  \item ¿Por qué no se puede definir el regresivo con $\I^{-1}$, y qué lo reemplaza?
+  \item En el bitmap, ¿qué índice tiene $e_{023}$? ¿Y qué signo tiene $e_{032}$ respecto a él?
+\end{enumerate}
+\end{control}
+
+\begin{tcolorbox}[colback=verde!6,colframe=verde,title={\faFlagCheckered~Cierre del módulo 0},fonttitle=\bfseries]
+\begin{itemize}[leftmargin=*]
+  \item Ejercicios 0.1 a 0.6 resueltos a mano.
+  \item Preguntas de control respondidas.
+  \item \texttt{node --test} sin fallas (prueba P10 del plan).
+  \item Cara pública: la mesa de trabajo, con la cámara movida por un motor y el cursor convertido en una recta que
+        corta el plano de la mesa (el punto donde se tocaría).
+\end{itemize}
+\end{tcolorbox}
+
+\end{document}
