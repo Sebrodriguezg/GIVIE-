@@ -337,8 +337,12 @@ main, .pie { position: relative; z-index: 1; }
 /* ---------- páginas internas (secciones/) ---------- */
 .interna { background: var(--crema); }
 .interna-cabeza {
-  background: var(--morado); color: #fff; padding: 20px 16px 40px; text-align: center;
+  color: #fff; padding: 20px 16px 40px; text-align: center;
+  /* collage de herramientas de la cartilla, oscurecido para que se lea el título */
+  background: linear-gradient(rgba(27, 17, 88, .45), rgba(27, 17, 88, .45)),
+    url("../img/fondo-herramientas.webp") center / cover, var(--morado);
 }
+.interna-cabeza h1, .interna-cabeza p { text-shadow: 0 2px 10px rgba(10, 6, 40, .8); }
 .interna-cabeza a.volver { display: inline-block; margin-bottom: 16px; color: var(--amarillo); font-weight: 700; text-decoration: none; }
 .interna-cabeza h1 { margin: 0; font-family: var(--titulos); font-weight: 400; text-transform: uppercase; font-size: clamp(2.4rem, 8vw, 4.4rem); color: var(--amarillo); line-height: 1; }
 .interna-cabeza p { margin: 8px 0 0; font-family: var(--mano); font-size: 1.4rem; }
