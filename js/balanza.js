@@ -13,6 +13,8 @@ const PESAS = [
 const INCLINACION_MAX = 0.3; // rad
 
 export async function montar(contenedor, { abrirVentana }) {
+  // botones y textos del mismo panel (no de otro que se haya abierto mientras esto cargaba)
+  const deLab = id => contenedor.closest('.lab').querySelector(`#${id}`);
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
   renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
   renderer.shadowMap.enabled = true;
@@ -68,7 +70,7 @@ export async function montar(contenedor, { abrirVentana }) {
   const estado = Object.assign(document.createElement('div'), { className: 'lab-estado' });
   const pista = Object.assign(document.createElement('div'), { className: 'lab-pista', textContent: 'Arrastra los objetos de colores ↔' });
   contenedor.append(estado, pista);
-  const cuentas = document.getElementById('lab-cuentas');
+  const cuentas = deLab('lab-cuentas');
 
   // ---------- física sencilla: el brazo busca el ángulo que pide el torque
   let angulo = 0, velocidad = 0, tocado = false, celebrado = false;
@@ -168,14 +170,14 @@ export async function montar(contenedor, { abrirVentana }) {
   renderer.domElement.addEventListener('pointercancel', alSoltar);
 
   // ---------- botones del panel
-  const verCuentas = document.getElementById('lab-ver-cuentas');
+  const verCuentas = deLab('lab-ver-cuentas');
   const alternarCuentas = () => {
     cuentas.hidden = !cuentas.hidden;
     verCuentas.textContent = cuentas.hidden ? 'Ver las cuentas' : 'Ocultar las cuentas';
   };
   verCuentas.addEventListener('click', alternarCuentas);
-  document.getElementById('lab-reiniciar').addEventListener('click', sortear);
-  document.getElementById('lab-ar').addEventListener('click', () => verEnMesa(MECANISMOS[0], abrirVentana));
+  deLab('lab-reiniciar').addEventListener('click', sortear);
+  deLab('lab-ar').addEventListener('click', () => verEnMesa(MECANISMOS[0], abrirVentana));
 
   // ---------- tamaño y bucle
   function ajustar() {

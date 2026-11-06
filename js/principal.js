@@ -105,12 +105,41 @@ for (const m of MECANISMOS) {
 }
 
 function paginasHtml(m) {
-  return `<div class="paginas">${m.paginas.map(n =>
-    `<img src="img/cartilla/pag-${String(n).padStart(2, '0')}.webp" alt="${m.nombre}, página ${n} de la cartilla" loading="lazy" width="1600" height="900">`).join('')}</div>`;
+  // la primera página se ve completa; la segunda queda sombreada: está en la cartilla
+  return `<div class="paginas">${m.paginas.map((n, i) => {
+    const img = `<img src="img/cartilla/pag-${String(n).padStart(2, '0')}.webp" alt="${m.nombre}, página ${n} de la cartilla" loading="lazy" width="1600" height="900">`;
+    return i === 0 ? img : `<div class="pagina-sombreada">${img}<span>Continúa en la cartilla</span></div>`;
+  }).join('')}</div>`;
 }
 
+const PANELES = {
+  balanza: `
+        <h4>¡Encuentra el equilibrio!</h4>
+        <p>Arrastra el objeto <b style="color:var(--rojo)">pesado</b> y el <b style="color:#2a8fc4">liviano</b> por el brazo de la balanza. ¿Dónde los colocarías para que quede derecha?</p>
+        <p>Gira la balanza arrastrando el fondo.</p>
+        <p class="lab-cuentas" id="lab-cuentas" hidden></p>
+        <div class="lab-botones">
+          <button type="button" class="boton boton-rojo" id="lab-ar">Ver en mi mesa (AR)</button>
+          <button type="button" class="boton boton-claro" id="lab-reiniciar">Otra vez</button>
+          <button type="button" class="boton boton-claro" id="lab-ver-cuentas">Ver las cuentas</button>
+        </div>`,
+  pantografo: `
+        <h4>¡Haz un dibujo!</h4>
+        <p>Dibuja aquí con el dedo o el mouse. El <b style="color:#1f4fd6">punzón</b> recorre tu dibujo y el
+          <b style="color:var(--rojo)">lápiz</b> lo copia al doble de tamaño.</p>
+        <canvas class="libreta" id="lab-libreta" aria-label="Libreta para dibujar"></canvas>
+        <div class="lab-botones">
+          <button type="button" class="boton boton-rojo" id="lab-dibujar" disabled>¡Que lo dibuje el pantógrafo!</button>
+          <button type="button" class="boton boton-claro" id="lab-borrar">Borrar</button>
+          <button type="button" class="boton boton-claro" id="lab-ar">Ver en mi mesa (AR)</button>
+        </div>
+        <p>También puedes arrastrar el punzón sobre el papel. Gira el pantógrafo arrastrando el fondo.</p>`,
+};
+
+let turnoMostrar = 0;
 async function mostrar(id, desplazar = false) {
   const m = MECANISMOS.find(x => x.id === id) ?? MECANISMOS[0];
+  const turno = ++turnoMostrar;
   pestanas.querySelectorAll('button').forEach(b => b.setAttribute('aria-selected', b.dataset.id === m.id));
   desmontar?.(); desmontar = null;
   panel.innerHTML = `
@@ -132,30 +161,24 @@ async function mostrar(id, desplazar = false) {
     </div>` : ''}
     ${m.modelo3d === 'interactivo' ? `
     <div class="lab">
-      <div class="lab-escena" id="lab-escena"><div class="lab-cargando">Armando la balanza…</div></div>
-      <div class="lab-panel">
-        <h4>¡Encuentra el equilibrio!</h4>
-        <p>Arrastra el objeto <b style="color:var(--rojo)">pesado</b> y el <b style="color:#2a8fc4">liviano</b> por el brazo de la balanza. ¿Dónde los colocarías para que quede derecha?</p>
-        <p>Gira la balanza arrastrando el fondo.</p>
-        <p class="lab-cuentas" id="lab-cuentas" hidden></p>
-        <div class="lab-botones">
-          <button type="button" class="boton boton-rojo" id="lab-ar">Ver en mi mesa (AR)</button>
-          <button type="button" class="boton boton-claro" id="lab-reiniciar">Otra vez</button>
-          <button type="button" class="boton boton-claro" id="lab-ver-cuentas">Ver las cuentas</button>
-        </div>
-      </div>
+      <div class="lab-escena" id="lab-escena"><div class="lab-cargando">Armando ${m.id === 'balanza' ? 'la balanza' : 'el pantógrafo'}…</div></div>
+      <div class="lab-panel">${PANELES[m.id]}</div>
     </div>` : ''}
     ${paginasHtml(m)}
     <p class="sabias"><b>Sabías que…</b> ${m.sabias}</p>`;
-  panel.querySelectorAll('.paginas img').forEach(img => img.addEventListener('click', () => {
+  panel.querySelectorAll('.paginas > img').forEach(img => img.addEventListener('click', () => {
     const grande = document.createElement('img');
     grande.src = img.src; grande.alt = img.alt;
     abrirVentana(grande);
   }));
   if (desplazar) $('#vistazo').scrollIntoView({ behavior: 'smooth' });
   if (m.modelo3d === 'interactivo') {
+    const escena = $('#lab-escena'); // se toma antes de esperar: el panel puede cambiar mientras carga
     const { montar } = await import(`./${m.id}.js`);
-    desmontar = await montar($('#lab-escena'), { abrirVentana });
+    if (turno !== turnoMostrar) return;
+    const quitar = await montar(escena, { abrirVentana });
+    // si mientras se armaba se eligió otro prototipo, este se desarma enseguida
+    if (turno === turnoMostrar) desmontar = quitar; else quitar();
   } else if (m.modelo3d === 'animado') {
     const visor = panel.querySelector('model-viewer');
     $('#lab-ar').addEventListener('click', () => verEnMesa(m, abrirVentana, visor));

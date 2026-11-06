@@ -21,7 +21,7 @@
 <header><h1>Mecanismos de la cartilla</h1>Arrastra para girar · en el celular, toca el cubo para verlos en tu mesa (AR)</header>
 <main id="lista"></main>
 <script type="module">
-  const cat = ['balanza','pantografo','manivela','biela','dos-ruedas','cuenta-historias','bailarinas']
+  const cat = ['balanza','pantografo']
     .map(id => ({ nombre: id, archivo: `modelos/mecanismos/${id}.glb`, medidas_mm: [] }));
   const lista = document.getElementById('lista');
   for (const p of cat) {

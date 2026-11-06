@@ -209,6 +209,12 @@ main, .pie { position: relative; z-index: 1; }
 .mecanismo-pregunta { font-family: var(--mano); font-size: clamp(1.3rem, 3vw, 1.7rem); margin: 10px 0 16px; }
 .paginas { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; background: #ddd5bf; padding: 6px; border-radius: 12px; }
 .paginas img { display: block; width: 100%; border-radius: 6px; cursor: zoom-in; }
+.pagina-sombreada { position: relative; overflow: hidden; border-radius: 6px; }
+.pagina-sombreada img { filter: blur(5px) grayscale(.35); transform: scale(1.06); cursor: default; user-select: none; pointer-events: none; }
+.pagina-sombreada span {
+  position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 12px;
+  background: rgba(27, 17, 88, .55); color: #fff; font-family: var(--mano); font-size: clamp(1.2rem, 2.6vw, 1.7rem);
+}
 .sabias { background: var(--crema); border-left: 6px solid var(--amarillo); border-radius: 10px; padding: 10px 14px; margin: 16px 0 0; }
 .sabias b { font-family: var(--mano); font-size: 1.3rem; color: var(--rojo); }
 .pronto {
@@ -245,6 +251,15 @@ main, .pie { position: relative; z-index: 1; }
 .lab-cuentas[hidden] { display: none; }
 .lab-botones { display: flex; flex-wrap: wrap; gap: 8px; }
 .lab-botones .boton { padding: 10px 16px; font-size: .95rem; }
+.lab-botones .boton:disabled { opacity: .5; cursor: default; }
+
+/* pantógrafo: libreta para dibujar */
+.libreta {
+  display: block; width: 100%; aspect-ratio: 1; border-radius: 14px; cursor: crosshair; touch-action: none;
+  background-color: #fffdf6; border: 2px solid #e2d6ad;
+  background-image: linear-gradient(#e8eefc 1px, transparent 1px), linear-gradient(90deg, #e8eefc 1px, transparent 1px);
+  background-size: 10% 10%;
+}
 
 /* ventana (QR, zoom) */
 .ventana {
